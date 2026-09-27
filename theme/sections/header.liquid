@@ -49,33 +49,22 @@
     color: var(--color-text);
   }
 
-  /* Homepage only: no background of its own, sits on top of the hero image.
-     A top scrim (independent of the hero's own scrim) keeps the nav text
-     readable regardless of what's behind it in the photo. */
+  /* Homepage only: purely positioning, NO background/scrim of its own.
+     Two separate elements each independently computing "span the full
+     viewport" is exactly how the previous version got a visible seam —
+     the header's own scrim and the hero's overlay were two different
+     boxes that didn't land pixel-identical. The darkening behind the nav
+     text now lives entirely in the hero's own single overlay layer (see
+     sections/hero-kapihan.liquid), which is the same box as the hero's
+     image, so there is nothing left for this element to misalign with. */
   .header--transparent {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    /* Override .full-bleed's width/margin-inline: those resolve correctly
-       for an in-flow element (footer, hero) but are ambiguous once
-       combined with position: absolute. A plain inset stretch (left/right
-       both set, width left to solve to fill the containing block exactly)
-       is the unambiguous technique for an absolutely positioned element. */
-    width: auto;
-    margin-inline: 0;
     background-color: transparent;
     border-bottom-color: transparent;
     color: var(--color-paper);
-  }
-  .header--transparent::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    height: 11rem;
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 70%, transparent), transparent);
-    pointer-events: none;
-    z-index: -1;
   }
 
   .header__row {

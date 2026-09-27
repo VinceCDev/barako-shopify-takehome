@@ -98,24 +98,37 @@
     object-fit: cover;
   }
 
-  /* Layered scrim: strongest behind the bottom-left text, fading to
-     transparent toward the top-right, so the image still reads clearly
-     away from the copy. */
-  /* A uniform baseline wash (so no part of the photo is ever left fully
-     uncovered) plus the stronger directional gradient on top, per the art
-     direction: strongest behind the bottom-left text, fading toward the
-     top-right. */
-  /* Three layers: a diagonal wash for the editorial "fade into the photo"
-     look, a flat full-width band at the bottom that guarantees the whole
-     text block (eyebrow through buttons) gets the SAME strong, uniform
-     coverage regardless of exactly where each line falls (the diagonal
-     alone let the topmost line — the eyebrow — land in a weaker part of
-     the falloff), and a light wash everywhere else so no part of the
-     photo is left fully uncovered. */
+  /* The ONE overlay layer for the whole hero — this is also where the
+     header's scrim lives when the header sits transparent on top of this
+     section (the header itself has no background of its own; see
+     sections/header.liquid). Keeping every gradient on this single box,
+     the same box the image itself fills, is what guarantees they all
+     cover identically edge to edge: there is no second element anywhere
+     independently computing "full viewport width" that could land even a
+     pixel out of alignment with this one.
+
+     Four stacked layers:
+     1. A top band, sized in rem (not %) so it stays ~11rem regardless of
+        the hero's own height — this is what keeps the header's nav text
+        readable.
+     2. A diagonal wash for the editorial "fade into the photo" look,
+        strongest bottom-left.
+     3. A flat full-width band at the bottom that guarantees the whole
+        text block (eyebrow through buttons) gets the SAME strong,
+        uniform coverage regardless of exactly where each line falls (the
+        diagonal alone let the topmost line — the eyebrow — land in a
+        weaker part of the falloff).
+     4. A light wash everywhere else so no part of the photo is ever left
+        fully uncovered. */
   .hero-kapihan__overlay {
     position: absolute;
     inset: 0;
     background:
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--hero-overlay-color) var(--hero-overlay-strength), transparent) 0,
+        transparent 11rem
+      ),
       linear-gradient(
         to top right,
         color-mix(in srgb, var(--hero-overlay-color) var(--hero-overlay-strength), transparent) 0%,
