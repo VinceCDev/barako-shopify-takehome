@@ -1,0 +1,193 @@
+<header class="header">
+  <div class="header__row">
+    <p class="header__title">
+      {{ shop.name | link_to: routes.root_url }}
+    </p>
+
+    <details class="header__nav-toggle">
+      <summary class="header__nav-toggle-button">
+        {{ 'icon-menu.svg' | inline_asset_content }}
+        <span>{{ 'general.menu' | t }}</span>
+      </summary>
+
+      <nav class="header__menu" aria-label="{{ 'general.menu' | t }}">
+        {% for link in section.settings.menu.links %}
+          {{ link.title | link_to: link.url }}
+        {% endfor %}
+      </nav>
+    </details>
+
+    <div class="header__icons">
+      {% if shop.customer_accounts_enabled %}
+        <shopify-account
+          class="header__icon-link"
+          menu="{{ section.settings.customer_account_menu }}"
+        >
+          {{ 'icon-account.svg' | inline_asset_content }}
+        </shopify-account>
+      {% endif %}
+
+      <a href="{{ routes.cart_url }}" class="header__icon-link header__cart-link">
+        {{ 'icon-cart.svg' | inline_asset_content }}
+        <span class="visually-hidden">{{ 'cart.title' | t }}</span>
+        {% if cart.item_count > 0 %}
+          <sup class="header__cart-count" aria-hidden="true">{{ cart.item_count }}</sup>
+        {% endif %}
+      </a>
+    </div>
+  </div>
+</header>
+
+{% stylesheet %}
+  .header {
+    background-color: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 5rem;
+    position: relative;
+  }
+
+  .header__title {
+    font-size: var(--font-size-md);
+    font-family: var(--font-heading--family);
+    font-weight: var(--font-heading--weight);
+  }
+
+  .header__title a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  /* Mobile nav: a native <details> disclosure needs no JavaScript */
+  .header__nav-toggle {
+    order: 3;
+  }
+
+  .header__nav-toggle-button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    list-style: none;
+    cursor: pointer;
+    padding: var(--space-2);
+    margin: calc(var(--space-2) * -1);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+  }
+  .header__nav-toggle-button::-webkit-details-marker {
+    display: none;
+  }
+  .header__nav-toggle-button svg {
+    width: 1.5rem;
+  }
+
+  .header__menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    position: absolute;
+    top: calc(100% + 1px);
+    left: calc(var(--page-margin) * -1);
+    right: calc(var(--page-margin) * -1);
+    padding: var(--space-4) var(--page-margin) var(--space-6);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header__menu a {
+    text-decoration: none;
+    color: var(--color-text);
+    padding: var(--space-2) 0;
+    font-size: var(--font-size-md);
+  }
+  .header__menu a:hover {
+    color: var(--color-primary);
+  }
+
+  .header__icons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    order: 2;
+  }
+
+  .header__icon-link {
+    position: relative;
+    display: flex;
+    color: var(--color-text);
+  }
+  .header__icon-link svg {
+    width: 1.5rem;
+  }
+
+  .header__cart-count {
+    position: absolute;
+    top: -0.35rem;
+    right: -0.5rem;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background-color: var(--color-accent-strong);
+    color: var(--color-on-accent);
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  @media (min-width: 48rem) {
+    .header__nav-toggle {
+      order: 2;
+      display: contents;
+    }
+    .header__nav-toggle-button {
+      display: none;
+    }
+    .header__menu {
+      position: static;
+      flex-direction: row;
+      align-items: center;
+      gap: var(--space-6);
+      padding: 0;
+      background-color: transparent;
+      border-bottom: none;
+      display: flex !important;
+    }
+    .header__menu a {
+      padding: 0;
+      font-size: var(--font-size-sm);
+    }
+    .header__icons {
+      order: 3;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.header",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:labels.menu"
+    },
+    {
+      "type": "link_list",
+      "id": "customer_account_menu",
+      "label": "t:labels.customer_account_menu",
+      "default": "customer-account-main-menu"
+    }
+  ]
+}
+{% endschema %}

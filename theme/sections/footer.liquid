@@ -1,0 +1,196 @@
+<footer class="footer">
+  <div class="footer__row">
+    <div class="footer__brand">
+      <p class="footer__title">{{ shop.name | link_to: routes.root_url }}</p>
+      {% if section.settings.brand_story != blank %}
+        <div class="footer__story">
+          {{ section.settings.brand_story }}
+        </div>
+      {% endif %}
+    </div>
+
+    <nav class="footer__links" aria-label="{{ 'general.menu' | t }}">
+      {% for link in section.settings.menu.links %}
+        {{ link.title | link_to: link.url }}
+      {% endfor %}
+    </nav>
+
+    <div class="footer__newsletter">
+      <h2 class="footer__newsletter-heading">{{ 'footer.newsletter_heading' | t }}</h2>
+      <p class="footer__newsletter-text">{{ 'footer.newsletter_text' | t }}</p>
+
+      {% form 'customer', class: 'footer__newsletter-form' %}
+        <input type="hidden" name="contact[tags]" value="newsletter">
+
+        <label for="NewsletterEmail-{{ section.id }}" class="visually-hidden">
+          {{ 'footer.newsletter_placeholder' | t }}
+        </label>
+        <input
+          id="NewsletterEmail-{{ section.id }}"
+          type="email"
+          name="contact[email]"
+          placeholder="{{ 'footer.newsletter_placeholder' | t }}"
+          autocomplete="email"
+          required
+        >
+        <button type="submit" class="button">
+          {{ 'footer.newsletter_submit' | t }}
+        </button>
+
+        {% if form.posted_successfully? %}
+          <p class="footer__newsletter-message" role="status">
+            {{ 'footer.newsletter_success' | t }}
+          </p>
+        {% elsif form.errors %}
+          <p class="footer__newsletter-message footer__newsletter-message--error" role="alert">
+            {{ 'footer.newsletter_error' | t }}
+          </p>
+        {% endif %}
+      {% endform %}
+    </div>
+  </div>
+
+  <div class="footer__row footer__row--bottom">
+    <div class="footer__copyright">
+      &copy;
+      {{ 'now' | date: '%Y' }}
+      {{ shop.name | link_to: routes.root_url }}, {{ powered_by_link }}
+    </div>
+
+    {% if section.settings.show_payment_icons %}
+      <div class="footer__payment">
+        {% for type in shop.enabled_payment_types %}
+          {{ type | payment_type_svg_tag }}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</footer>
+
+{% stylesheet %}
+  .footer {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    margin-top: var(--space-8);
+    padding-top: var(--space-7);
+  }
+
+  .footer__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-7);
+    padding-bottom: var(--space-6);
+  }
+
+  .footer__title {
+    font-family: var(--font-heading--family);
+    font-weight: var(--font-heading--weight);
+    font-size: var(--font-size-md);
+  }
+  .footer__title a {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .footer__story {
+    margin-top: var(--space-3);
+    max-width: 32rem;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+  }
+  .footer__story p + p {
+    margin-top: var(--space-3);
+  }
+
+  .footer__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .footer__links a {
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+  }
+  .footer__links a:hover {
+    color: var(--color-primary);
+  }
+
+  .footer__newsletter-heading {
+    font-size: var(--font-size-md);
+    font-family: var(--font-heading--family);
+  }
+  .footer__newsletter-text {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+  }
+
+  .footer__newsletter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .footer__newsletter-form input[type='email'] {
+    flex: 1 1 12rem;
+  }
+
+  .footer__newsletter-message {
+    flex-basis: 100%;
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+  }
+  .footer__newsletter-message--error {
+    color: var(--color-accent-strong);
+  }
+
+  .footer__row--bottom {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+  }
+
+  .footer__copyright {
+    font-size: var(--font-size-xs);
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+  }
+  .footer__copyright a {
+    color: inherit;
+  }
+
+  .footer__payment {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.footer",
+  "settings": [
+    {
+      "type": "richtext",
+      "id": "brand_story",
+      "label": "t:labels.brand_story",
+      "default": "<p>Barako & Co. roasts single-origin coffee from Batangas, Benguet, Sagada, Mt. Apo, and Kalinga, small-batch, straight from the farmers who grow it.</p>"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:labels.menu"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "t:labels.show_payment_icons",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

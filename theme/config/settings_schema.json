@@ -1,0 +1,113 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Skeleton",
+    "theme_version": "0.1.0",
+    "theme_author": "Shopify",
+    "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
+    "theme_support_url": "https://support.shopify.com/"
+  },
+  {
+    "name": "t:general.typography",
+    "settings": [
+      {
+        "type": "header",
+        "content": "t:general.fonts"
+      },
+      {
+        "type": "font_picker",
+        "id": "type_heading_font",
+        "default": "fraunces_n4",
+        "label": "t:labels.heading_font",
+        "info": "t:labels.heading_font_info"
+      },
+      {
+        "type": "font_picker",
+        "id": "type_body_font",
+        "default": "work_sans_n4",
+        "label": "t:labels.body_font"
+      }
+    ]
+  },
+  {
+    "name": "t:general.colors",
+    "settings": [
+      {
+        "type": "color",
+        "id": "color_background",
+        "default": "#FBF7F0",
+        "label": "t:labels.background",
+        "info": "t:labels.color_background_info"
+      },
+      {
+        "type": "color",
+        "id": "color_surface",
+        "default": "#F5EDE0",
+        "label": "t:labels.surface",
+        "info": "t:labels.color_surface_info"
+      },
+      {
+        "type": "color",
+        "id": "color_text",
+        "default": "#2B1A12",
+        "label": "t:labels.text",
+        "info": "t:labels.color_text_info"
+      },
+      {
+        "type": "color",
+        "id": "color_primary",
+        "default": "#6B3E26",
+        "label": "t:labels.primary",
+        "info": "t:labels.color_primary_info"
+      },
+      {
+        "type": "color",
+        "id": "color_accent",
+        "default": "#C2572B",
+        "label": "t:labels.accent",
+        "info": "t:labels.color_accent_info"
+      }
+    ]
+  },
+  {
+    "name": "t:general.layout",
+    "settings": [
+      {
+        "type": "select",
+        "id": "max_page_width",
+        "label": "t:labels.page_width",
+        "options": [
+          {
+            "value": "90rem",
+            "label": "t:options.page_width.narrow"
+          },
+          {
+            "value": "110rem",
+            "label": "t:options.page_width.wide"
+          }
+        ],
+        "default": "90rem"
+      },
+      {
+        "type": "range",
+        "id": "min_page_margin",
+        "min": 10,
+        "max": 100,
+        "step": 1,
+        "unit": "px",
+        "label": "t:labels.page_margin",
+        "default": 20
+      },
+      {
+        "type": "range",
+        "id": "input_corner_radius",
+        "min": 0,
+        "max": 24,
+        "step": 1,
+        "unit": "px",
+        "label": "t:labels.input_corner_radius",
+        "default": 6
+      }
+    ]
+  }
+]
