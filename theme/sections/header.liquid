@@ -1,12 +1,12 @@
-<header class="header">
-  <div class="header__row">
+<header class="header{% if template == 'index' %} header--transparent{% endif %}">
+  <div class="header__row wrap">
     <p class="header__title">
       {{ shop.name | link_to: routes.root_url }}
     </p>
 
     <details class="header__nav-toggle">
       <summary class="header__nav-toggle-button">
-        {{ 'icon-menu.svg' | inline_asset_content }}
+        {% render 'icon', name: 'menu' %}
         <span>{{ 'general.menu' | t }}</span>
       </summary>
     </details>
@@ -23,15 +23,17 @@
           class="header__icon-link"
           menu="{{ section.settings.customer_account_menu }}"
         >
-          {{ 'icon-account.svg' | inline_asset_content }}
+          {% render 'icon', name: 'account' %}
         </shopify-account>
       {% endif %}
 
       <a href="{{ routes.cart_url }}" class="header__icon-link header__cart-link">
-        {{ 'icon-cart.svg' | inline_asset_content }}
-        <span class="visually-hidden">{{ 'cart.title' | t }}</span>
+        {% render 'icon', name: 'cart' %}
+        <span class="visually-hidden">
+          {{ 'cart.title' | t }}, {{ 'cart.item_count' | t: count: cart.item_count }}
+        </span>
         {% if cart.item_count > 0 %}
-          <sup class="header__cart-count" aria-hidden="true">{{ cart.item_count }}</sup>
+          <span class="header__cart-count" aria-hidden="true">({{ cart.item_count }})</span>
         {% endif %}
       </a>
     </div>
@@ -40,8 +42,40 @@
 
 {% stylesheet %}
   .header {
+    position: relative;
+    z-index: 10;
     background-color: var(--color-background);
     border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* Homepage only: no background of its own, sits on top of the hero image.
+     A top scrim (independent of the hero's own scrim) keeps the nav text
+     readable regardless of what's behind it in the photo. */
+  .header--transparent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Override .full-bleed's width/margin-inline: those resolve correctly
+       for an in-flow element (footer, hero) but are ambiguous once
+       combined with position: absolute. A plain inset stretch (left/right
+       both set, width left to solve to fill the containing block exactly)
+       is the unambiguous technique for an absolutely positioned element. */
+    width: auto;
+    margin-inline: 0;
+    background-color: transparent;
+    border-bottom-color: transparent;
+    color: var(--color-paper);
+  }
+  .header--transparent::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    height: 11rem;
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 70%, transparent), transparent);
+    pointer-events: none;
+    z-index: -1;
   }
 
   .header__row {
@@ -49,22 +83,22 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    min-height: 5rem;
-    position: relative;
+    min-height: 5.5rem;
   }
 
   .header__title {
-    font-size: var(--font-size-md);
-    font-family: var(--font-heading--family);
-    font-weight: var(--font-heading--weight);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
   }
 
   .header__title a {
+    color: inherit;
     text-decoration: none;
-    color: var(--color-text);
   }
 
-  /* Mobile nav: a native <details> disclosure needs no JavaScript */
+  /* Mobile nav toggle */
   .header__nav-toggle {
     order: 3;
   }
@@ -72,83 +106,82 @@
   .header__nav-toggle-button {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-2);
     list-style: none;
     cursor: pointer;
-    padding: var(--space-2);
-    margin: calc(var(--space-2) * -1);
-    border-radius: var(--radius-sm);
-    color: var(--color-text);
-    font-size: var(--font-size-sm);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin-inline-end: calc(var(--space-3) * -1);
+    padding-inline: var(--space-3);
+    color: inherit;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
   }
   .header__nav-toggle-button::-webkit-details-marker {
     display: none;
   }
   .header__nav-toggle-button svg {
-    width: 1.5rem;
+    width: 1.375rem;
   }
 
-  /* Mobile: the nav is a sibling of <details>, hidden by default and shown
-     via the [open] attribute, not by nesting it inside the disclosure.
-     This avoids fighting the UA rule that hides closed-details children. */
+  /* The nav is a sibling of <details>, hidden by default and shown via the
+     [open] attribute rather than nested inside the disclosure, so it never
+     fights the browser's own "hide closed details content" rule. */
   .header__menu {
     display: none;
     flex-direction: column;
     gap: var(--space-1);
     position: absolute;
-    top: calc(100% + 1px);
-    left: calc(var(--page-margin) * -1);
-    right: calc(var(--page-margin) * -1);
+    top: 100%;
+    left: 0;
+    right: 0;
     padding: var(--space-4) var(--page-margin) var(--space-6);
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
   }
   .header__nav-toggle[open] ~ .header__menu {
     display: flex;
   }
 
   .header__menu a {
+    color: inherit;
     text-decoration: none;
-    color: var(--color-text);
-    padding: var(--space-2) 0;
+    padding-block: var(--space-3);
     font-size: var(--font-size-md);
-  }
-  .header__menu a:hover {
-    color: var(--color-primary);
   }
 
   .header__icons {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     order: 2;
   }
 
+  /* 44x44 minimum tap target: the icon glyph stays small and visually
+     quiet while the clickable area is generous. */
   .header__icon-link {
     position: relative;
-    display: flex;
-    color: var(--color-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    color: inherit;
   }
   .header__icon-link svg {
-    width: 1.5rem;
+    width: 1.375rem;
+  }
+  .header__cart-link {
+    padding-inline-end: var(--space-2);
   }
 
   .header__cart-count {
-    position: absolute;
-    top: -0.35rem;
-    right: -0.5rem;
-    min-width: 1.1rem;
-    height: 1.1rem;
-    padding: 0 0.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-full);
-    background-color: var(--color-accent-strong);
-    color: var(--color-on-accent);
-    font-size: 0.65rem;
-    font-weight: 700;
-    line-height: 1;
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--tracking-label);
   }
 
   @media (min-width: 750px) {
@@ -165,13 +198,25 @@
       padding: 0;
       background-color: transparent;
       border-bottom: none;
+      color: inherit;
     }
     .header__menu a {
-      padding: 0;
-      font-size: var(--font-size-sm);
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      margin-block: calc((2.75rem - 1.6em) / -2);
+      padding-block: 0;
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: var(--tracking-label);
+      text-underline-offset: 0.2em;
+    }
+    .header__menu a:hover {
+      text-decoration: underline;
     }
     .header__icons {
       order: 3;
+      margin-inline-end: calc(var(--space-3) * -1);
     }
   }
 {% endstylesheet %}

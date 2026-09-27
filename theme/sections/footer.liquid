@@ -1,22 +1,8 @@
-<footer class="footer">
-  <div class="footer__row">
-    <div class="footer__brand">
-      <p class="footer__title">{{ shop.name | link_to: routes.root_url }}</p>
-      {% if section.settings.brand_story != blank %}
-        <div class="footer__story">
-          {{ section.settings.brand_story }}
-        </div>
-      {% endif %}
-    </div>
+<footer class="footer full-bleed">
+  <div class="footer__newsletter wrap">
+    <h2 class="footer__newsletter-heading">{{ 'footer.newsletter_heading' | t }}</h2>
 
-    <nav class="footer__links" aria-label="{{ 'general.menu' | t }}">
-      {% for link in section.settings.menu.links %}
-        {{ link.title | link_to: link.url }}
-      {% endfor %}
-    </nav>
-
-    <div class="footer__newsletter">
-      <h2 class="footer__newsletter-heading">{{ 'footer.newsletter_heading' | t }}</h2>
+    <div class="footer__newsletter-form-wrap">
       <p class="footer__newsletter-text">{{ 'footer.newsletter_text' | t }}</p>
 
       {% form 'customer', class: 'footer__newsletter-form' %}
@@ -50,12 +36,62 @@
     </div>
   </div>
 
-  <div class="footer__row footer__row--bottom">
-    <div class="footer__copyright">
+  <div class="footer__grid wrap">
+    <div class="footer__col footer__brand">
+      <p class="footer__title">{{ shop.name | link_to: routes.root_url }}</p>
+      {% if section.settings.brand_story != blank %}
+        <div class="footer__story">
+          {{ section.settings.brand_story }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="footer__link-groups">
+      {% if section.settings.shop_menu.links.size > 0 %}
+        <div class="footer__col footer__col--shop">
+          <h3 class="footer__col-heading">{{ section.settings.shop_heading }}</h3>
+          <nav class="footer__links" aria-label="{{ section.settings.shop_heading }}">
+            {% for link in section.settings.shop_menu.links %}
+              {{ link.title | link_to: link.url }}
+            {% endfor %}
+          </nav>
+        </div>
+      {% endif %}
+
+      {% if section.settings.help_menu.links.size > 0 %}
+        <div class="footer__col footer__col--help">
+          <h3 class="footer__col-heading">{{ section.settings.help_heading }}</h3>
+          <nav class="footer__links" aria-label="{{ section.settings.help_heading }}">
+            {% for link in section.settings.help_menu.links %}
+              {{ link.title | link_to: link.url }}
+            {% endfor %}
+          </nav>
+        </div>
+      {% endif %}
+
+      {% if section.settings.visit_info != blank %}
+        <div class="footer__col footer__col--visit">
+          <h3 class="footer__col-heading">{{ section.settings.visit_heading }}</h3>
+          <div class="footer__visit">{{ section.settings.visit_info }}</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="footer__bottom wrap">
+    <p class="footer__copyright">
       &copy;
       {{ 'now' | date: '%Y' }}
       {{ shop.name | link_to: routes.root_url }}, {{ powered_by_link }}
-    </div>
+    </p>
+
+    {% if section.settings.legal_menu.links.size > 0 %}
+      <nav class="footer__legal" aria-label="{{ 'footer.legal' | t }}">
+        {% for link in section.settings.legal_menu.links %}
+          {{ link.title | link_to: link.url }}
+        {% endfor %}
+      </nav>
+    {% endif %}
 
     {% if section.settings.show_payment_icons %}
       <div class="footer__payment">
@@ -68,105 +104,207 @@
 </footer>
 
 {% stylesheet %}
+  /* Full-bleed dark section: intentionally the one place on the site that
+     inverts to a dark background, for page rhythm (light hero/sections,
+     one dark footer). */
   .footer {
-    background-color: var(--color-surface);
-    color: var(--color-text);
-    margin-top: var(--space-8);
-    padding-top: var(--space-7);
+    background-color: var(--color-ink);
+    color: var(--color-paper);
   }
 
-  .footer__row {
+  .footer__newsletter {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-    gap: var(--space-7);
-    padding-bottom: var(--space-6);
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    padding-block: var(--space-9);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-paper) 16%, transparent);
   }
-
-  .footer__title {
-    font-family: var(--font-heading--family);
-    font-weight: var(--font-heading--weight);
-    font-size: var(--font-size-md);
-  }
-  .footer__title a {
-    text-decoration: none;
-    color: var(--color-text);
-  }
-
-  .footer__story {
-    margin-top: var(--space-3);
-    max-width: 32rem;
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
-    color: color-mix(in srgb, var(--color-text) 85%, transparent);
-  }
-  .footer__story p + p {
-    margin-top: var(--space-3);
-  }
-
-  .footer__links {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-  .footer__links a {
-    color: var(--color-text);
-    text-decoration: none;
-    font-size: var(--font-size-sm);
-  }
-  .footer__links a:hover {
-    color: var(--color-primary);
+  @media (min-width: 48rem) {
+    .footer__newsletter {
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+    }
   }
 
   .footer__newsletter-heading {
-    font-size: var(--font-size-md);
-    font-family: var(--font-heading--family);
+    font-size: var(--font-size-2xl);
+    max-width: 16ch;
   }
+
   .footer__newsletter-text {
-    margin-top: var(--space-2);
-    font-size: var(--font-size-sm);
-    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+    font-size: var(--font-size-md);
+    color: var(--color-text-muted-on-dark);
   }
 
   .footer__newsletter-form {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
+    gap: var(--space-3);
+    margin-top: var(--space-5);
   }
   .footer__newsletter-form input[type='email'] {
     flex: 1 1 12rem;
+    min-height: 2.75rem;
+    background-color: transparent;
+    border-color: color-mix(in srgb, var(--color-paper) 30%, transparent);
+    color: var(--color-paper);
+  }
+  .footer__newsletter-form input[type='email']::placeholder {
+    color: var(--color-text-muted-on-dark);
+  }
+  .footer__newsletter-form .button {
+    background-color: var(--color-paper);
+    border-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .footer__newsletter-form .button:hover {
+    background-color: transparent;
+    color: var(--color-paper);
   }
 
   .footer__newsletter-message {
     flex-basis: 100%;
-    font-size: var(--font-size-xs);
-    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    color: var(--color-paper);
   }
   .footer__newsletter-message--error {
-    color: var(--color-accent-strong);
+    text-decoration: underline;
   }
 
-  .footer__row--bottom {
-    grid-template-columns: 1fr auto;
+  /* Mobile: brand full-width, then Shop/Help/Visit as a 2-column grid
+     below it. Desktop: one real 4-column row — brand ~4/12, the other
+     three balanced across the remaining 8/12 — via .footer__link-groups
+     going display: contents so its children become direct grid items. */
+  .footer__grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+    padding-block: var(--space-9);
+  }
+
+  .footer__link-groups {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-7);
+  }
+
+  @media (min-width: 64rem) {
+    .footer__grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      align-items: start;
+      gap: var(--space-7);
+    }
+    .footer__brand {
+      grid-column: span 4;
+    }
+    .footer__link-groups {
+      display: contents;
+    }
+    .footer__col--shop {
+      grid-column: span 3;
+    }
+    .footer__col--help {
+      grid-column: span 3;
+    }
+    .footer__col--visit {
+      grid-column: span 2;
+    }
+  }
+
+  .footer__title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+  }
+  .footer__title a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .footer__story {
+    margin-top: var(--space-4);
+    max-width: 32rem;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text-muted-on-dark);
+  }
+  .footer__story p + p {
+    margin-top: var(--space-3);
+  }
+
+  /* Same eyebrow style used by the hero and origin-story: 12px uppercase,
+     0.14em tracking. */
+  .footer__col-heading {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-eyebrow);
+    margin-bottom: var(--space-4);
+  }
+
+  .footer__links,
+  .footer__visit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: var(--font-size-base);
+  }
+  .footer__links a {
+    color: var(--color-text-muted-on-dark);
+    text-decoration: none;
+  }
+  .footer__links a:hover {
+    color: var(--color-paper);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+  .footer__visit {
+    color: var(--color-text-muted-on-dark);
+  }
+
+  .footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
     gap: var(--space-4);
-    border-top: 1px solid var(--color-border);
-    padding-top: var(--space-4);
-    padding-bottom: var(--space-4);
+    padding-block: var(--space-5);
+    border-top: 1px solid color-mix(in srgb, var(--color-paper) 16%, transparent);
   }
 
   .footer__copyright {
     font-size: var(--font-size-xs);
-    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+    color: var(--color-text-muted-on-dark);
   }
   .footer__copyright a {
     color: inherit;
   }
 
+  .footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+  .footer__legal a {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted-on-dark);
+    text-decoration: none;
+  }
+  .footer__legal a:hover {
+    color: var(--color-paper);
+    text-decoration: underline;
+  }
+
+  /* Muted monochrome: desaturated and dimmed so brand-colored payment
+     logos don't compete with the rest of the quiet bottom bar. */
   .footer__payment {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+    filter: grayscale(1);
+    opacity: 0.6;
   }
 {% endstylesheet %}
 
@@ -181,9 +319,44 @@
       "default": "<p>Barako & Co. roasts single-origin coffee from Batangas, Benguet, Sagada, Mt. Apo, and Kalinga, small-batch, straight from the farmers who grow it.</p>"
     },
     {
+      "type": "text",
+      "id": "shop_heading",
+      "label": "t:labels.shop_heading",
+      "default": "Shop"
+    },
+    {
       "type": "link_list",
-      "id": "menu",
-      "label": "t:labels.menu"
+      "id": "shop_menu",
+      "label": "t:labels.shop_menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "text",
+      "id": "help_heading",
+      "label": "t:labels.help_heading",
+      "default": "Help"
+    },
+    {
+      "type": "link_list",
+      "id": "help_menu",
+      "label": "t:labels.help_menu",
+      "default": "footer"
+    },
+    {
+      "type": "text",
+      "id": "visit_heading",
+      "label": "t:labels.visit_heading",
+      "default": "Visit"
+    },
+    {
+      "type": "richtext",
+      "id": "visit_info",
+      "label": "t:labels.visit_info"
+    },
+    {
+      "type": "link_list",
+      "id": "legal_menu",
+      "label": "t:labels.legal_menu"
     },
     {
       "type": "checkbox",

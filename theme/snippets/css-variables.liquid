@@ -7,7 +7,7 @@
   {{ settings.type_body_font | font_modify: 'style', 'italic' | font_face: font_display: 'swap' }}
 
   :root {
-    /* Fonts */
+    /* Fonts: one grotesk sans for everything, headings a touch heavier */
     --font-heading--family: {{ settings.type_heading_font.family }}, {{ settings.type_heading_font.fallback_families }};
     --font-heading--style: {{ settings.type_heading_font.style }};
     --font-heading--weight: {{ settings.type_heading_font.weight }};
@@ -15,30 +15,26 @@
     --font-body--style: {{ settings.type_body_font.style }};
     --font-body--weight: {{ settings.type_body_font.weight }};
 
-    /* Brand palette */
-    --color-espresso: {{ settings.color_text }};
-    --color-roast: {{ settings.color_primary }};
-    --color-terracotta: {{ settings.color_accent }};
-    --color-cream: {{ settings.color_surface }};
+    /* Brand palette: a restrained warm neutral set with one accent */
     --color-paper: {{ settings.color_background }};
+    --color-surface-raw: {{ settings.color_surface }};
+    --color-ink: {{ settings.color_text }};
+    --color-accent-raw: {{ settings.color_primary }};
 
     /* Semantic colors */
-    --color-text: var(--color-espresso);
     --color-background: var(--color-paper);
-    --color-surface: var(--color-cream);
-    --color-primary: var(--color-roast);
-    --color-primary-hover: color-mix(in srgb, var(--color-roast) 85%, black);
-    --color-accent: var(--color-terracotta);
-    /* Raw terracotta is ~4.2:1 on paper, just under AA for text.
-       Use -strong wherever text or icons sit directly on the accent color. */
-    --color-accent-strong: color-mix(in srgb, var(--color-terracotta) 82%, black);
-    --color-accent-strong-hover: color-mix(in srgb, var(--color-terracotta) 65%, black);
-    --color-border: color-mix(in srgb, var(--color-espresso) 18%, transparent);
+    --color-text: var(--color-ink);
+    --color-text-muted: #6B6158;
+    /* Only 2.97:1 against the ink background, so dark sections (the
+       footer) use this instead, precomputed to 6.42:1 against ink. */
+    --color-text-muted-on-dark: #9E9A95;
+    --color-surface: var(--color-surface-raw);
+    --color-primary: var(--color-accent-raw);
+    --color-primary-hover: color-mix(in srgb, var(--color-accent-raw) 82%, black);
+    --color-accent: var(--color-accent-raw);
     --color-on-primary: var(--color-paper);
     --color-on-accent: var(--color-paper);
-
-    /* Legacy alias kept for compatibility with existing theme code */
-    --color-foreground: var(--color-text);
+    --color-border: color-mix(in srgb, var(--color-ink) 12%, transparent);
 
     /* Layout */
     --page-width: {{ settings.max_page_width }};
@@ -53,27 +49,40 @@
     --space-6: 2rem;
     --space-7: 3rem;
     --space-8: 4rem;
+    --space-9: 4.5rem;
+    --space-10: 7.5rem;
 
-    /* Radius scale */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 16px;
-    --radius-full: 999px;
+    /* Section rhythm: ~72px mobile, ~120px desktop, per the art direction */
+    --section-padding: var(--space-9);
+
+    /* Shape: square to near-square only, no pill shapes */
+    --radius-sm: 0px;
+    --radius-md: 2px;
+    --radius-full: 2px;
     --style-border-radius-inputs: {{ settings.input_corner_radius }}px;
 
-    /* Type scale */
+    /* Type scale: a ~1.25 modular ratio, fluid via clamp() from --font-size-lg
+       up (where viewport-responsive sizing actually matters). Nothing below
+       0.75rem (12px); body copy (--font-size-md) never drops below 16px. */
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
-    --font-size-md: 1.125rem;
-    --font-size-lg: 1.5rem;
-    --font-size-xl: 2rem;
-    --font-size-2xl: 2.5rem;
-    --font-size-3xl: 3rem;
-    --line-height-tight: 1.15;
-    --line-height-base: 1.5;
+    --font-size-md: 1.0625rem;
+    --font-size-lg: clamp(1.375rem, 1.3rem + 0.4vw, 1.5625rem);
+    --font-size-xl: clamp(1.75rem, 1.6rem + 0.8vw, 2.1875rem);
+    --font-size-2xl: clamp(1.875rem, 1.6rem + 1.5vw, 2.75rem);
+    --font-size-3xl: clamp(2.25rem, 1.7rem + 2.75vw, 3.5rem);
+    --line-height-tight: 1.05;
+    --line-height-base: 1.6;
+    --tracking-tight: -0.02em;
+    --tracking-label: 0.08em;
+    --tracking-eyebrow: 0.14em;
 
-    /* Icons */
-    --icon-stroke-width: 1.5;
+    /* Motion: respected only outside prefers-reduced-motion, see critical.css */
+    --transition-fast: 200ms ease;
+    --transition-image: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Icons: Lucide-style inline line icons, see snippets/icon.liquid */
+    --icon-stroke-width: 1.25;
   }
 {% endstyle %}

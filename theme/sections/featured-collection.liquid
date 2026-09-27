@@ -10,7 +10,7 @@
     {% endif %}
 
     {% if section.settings.collection != blank %}
-      <a href="{{ section.settings.collection.url }}" class="featured-collection__view-all">
+      <a href="{{ section.settings.collection.url }}" class="text-link">
         {{ 'sections.featured_collection.view_all' | t }}
       </a>
     {% endif %}
@@ -21,14 +21,16 @@
       {% for product in section.settings.collection.products limit: section.settings.products_to_show %}
         <a href="{{ product.url }}" class="featured-collection__card">
           {% if product.featured_image %}
-            {% render 'image',
-              class: 'featured-collection__image',
-              image: product.featured_image,
-              url: nil,
-              width: 480,
-              height: 480,
-              crop: 'center'
-            %}
+            <div class="featured-collection__image-wrap hover-zoom">
+              {% render 'image',
+                class: 'featured-collection__image',
+                image: product.featured_image,
+                url: nil,
+                width: 600,
+                height: 750,
+                crop: 'center'
+              %}
+            </div>
           {% endif %}
           <span class="featured-collection__title">{{ product.title }}</span>
           <span class="featured-collection__price">{{ product.price | money }}</span>
@@ -40,7 +42,7 @@
 
 {% stylesheet %}
   .featured-collection {
-    padding-block: var(--space-8);
+    padding-block: var(--section-padding);
   }
 
   .featured-collection__header {
@@ -49,55 +51,46 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--space-4);
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .featured-collection__heading {
-    font-family: var(--font-heading--family);
     font-size: var(--font-size-2xl);
-  }
-
-  .featured-collection__view-all {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-primary);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-  .featured-collection__view-all:hover {
-    color: var(--color-primary-hover);
   }
 
   .featured-collection__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6) var(--space-5);
+  }
+  @media (min-width: 48rem) {
+    .featured-collection__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 
   .featured-collection__card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     color: var(--color-text);
     text-decoration: none;
   }
 
-  .featured-collection__image {
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-md);
+  .featured-collection__image-wrap {
+    aspect-ratio: 4 / 5;
+    background-color: var(--color-surface);
   }
 
   .featured-collection__title {
     font-size: var(--font-size-sm);
-    font-weight: 600;
-  }
-  .featured-collection__card:hover .featured-collection__title {
-    color: var(--color-primary);
   }
 
   .featured-collection__price {
     font-size: var(--font-size-sm);
-    color: color-mix(in srgb, var(--color-text) 75%, transparent);
+    color: var(--color-text-muted);
   }
 {% endstylesheet %}
 
@@ -123,7 +116,7 @@
       "min": 2,
       "max": 12,
       "step": 1,
-      "default": 6
+      "default": 8
     }
   ],
   "presets": [

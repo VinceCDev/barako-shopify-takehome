@@ -6,6 +6,13 @@
   margin: 0;
 }
 
+html {
+  /* Safety net for the .full-bleed utility below: 100vw can be a hair
+     wider than the visible viewport when a scrollbar is present, which
+     would otherwise introduce a horizontal scrollbar of its own. */
+  overflow-x: hidden;
+}
+
 body {
   display: flex;
   flex-direction: column;
@@ -41,7 +48,7 @@ select {
 
 dialog {
   background-color: var(--color-background);
-  color: var(--color-foreground);
+  color: var(--color-text);
 }
 
 p {
@@ -71,10 +78,67 @@ p:empty {
   margin-block-end: 0;
 }
 
+/* Motion is opt-in only where declared, and switched off entirely here */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+main {
+  flex: 1 1 auto;
+}
+
+/* Visible only when focused: the first tab stop on every page. */
+.skip-link {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 100;
+  padding: var(--space-3) var(--space-5);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform var(--transition-fast);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* The one shared page-gutter container. Sections that stay inside the
+   .shopify-section grid get this for free via grid-column: 2 below; this
+   class exists for content that opts out of that grid (position: absolute,
+   full-bleed backgrounds) but still needs to align to the same gutter. */
+.wrap {
+  width: 100%;
+  max-width: var(--page-width);
+  margin-inline: auto;
+  padding-inline: var(--page-margin);
+}
+
+/* The one full-bleed pattern: stretches an element to the full viewport
+   width regardless of any ancestor's grid/position constraints (the
+   `.shopify-section` centering grid, `position: absolute`, anything).
+   Independent of positioning mode, so it works for both in-flow sections
+   (footer, hero) and out-of-flow ones (the transparent header). Nest
+   `.wrap` inside it to keep the actual content aligned to the page
+   gutter while the background spans edge to edge. */
+.full-bleed {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+
 /** Theme styles below */
 body {
   font-family: var(--font-body--family);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-md);
   line-height: var(--line-height-base);
   background-color: var(--color-background);
   color: var(--color-text);
@@ -88,7 +152,8 @@ h5,
 h6 {
   font-family: var(--font-heading--family);
   line-height: var(--line-height-tight);
-  font-weight: var(--font-heading--weight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 600;
 }
 
 h1 {
@@ -99,17 +164,40 @@ h2 {
 }
 h3 {
   font-size: var(--font-size-xl);
+  font-weight: 500;
 }
 h4 {
   font-size: var(--font-size-lg);
+  font-weight: 500;
 }
 
+/* Prose links (e.g. inside a richtext field) stay underlined so they read
+   as links without relying on color alone. Quiet, component-level links
+   (nav, card titles, logo) opt out explicitly with text-decoration: none. */
 a {
   color: var(--color-primary);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 0.15em;
+  transition: text-underline-offset var(--transition-fast);
 }
 a:hover {
-  color: var(--color-primary-hover);
+  text-underline-offset: 0.25em;
+}
+
+/* Shared utility for CTA-style text links (view all, shop this origin, the
+   hero's secondary action). A quieter alternative to a button. */
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--color-text);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+.text-link:hover {
+  text-underline-offset: 0.32em;
 }
 
 /* Focus states: visible on keyboard focus, quiet on pointer clicks */
@@ -119,12 +207,13 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 summary:focus-visible,
+shopify-account:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
-/** Buttons */
+/** Buttons: one solid style, rectangular, small uppercase tracked label */
 .button,
 button:not([class]),
 input[type='submit'],
@@ -133,40 +222,28 @@ input[type='button'] {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  min-height: 2.75rem;
   font-family: var(--font-body--family);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
   line-height: 1;
-  padding: var(--space-3) var(--space-5);
-  border: 1px solid transparent;
+  padding: var(--space-4) var(--space-6);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
   background-color: var(--color-primary);
   color: var(--color-on-primary);
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 .button:hover,
 button:not([class]):hover,
 input[type='submit']:hover,
 input[type='button']:hover {
-  background-color: var(--color-primary-hover);
-  color: var(--color-on-primary);
-}
-.button--accent {
-  background-color: var(--color-accent-strong);
-}
-.button--accent:hover {
-  background-color: var(--color-accent-strong-hover);
-}
-.button--outline {
   background-color: transparent;
   color: var(--color-primary);
-  border-color: currentcolor;
-}
-.button--outline:hover {
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
 }
 
 /** Form inputs */
@@ -181,7 +258,7 @@ select {
 }
 input:not([type='submit'], [type='button'])::placeholder,
 textarea::placeholder {
-  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  color: var(--color-text-muted);
 }
 label {
   font-size: var(--font-size-sm);
@@ -199,6 +276,30 @@ label {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Editorial 12-column grid, used for precise asymmetric layouts
+   (origin story rows, etc). Falls back to a simple stack on mobile. */
+.grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space-6);
+}
+@media (max-width: 63.9375rem) {
+  .grid-12 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Subtle image hover: a small scale, never on prefers-reduced-motion */
+.hover-zoom {
+  overflow: hidden;
+}
+.hover-zoom img {
+  transition: var(--transition-image);
+}
+.hover-zoom:hover img {
+  transform: scale(1.03);
 }
 
 /** Section layout utilities */

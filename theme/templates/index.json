@@ -19,7 +19,8 @@
         "primary_button_link": "/collections/coffee",
         "secondary_button_label": "How we brew",
         "secondary_button_link": "#brew-guide",
-        "overlay_opacity": 45
+        "overlay_color": "#1B1612",
+        "overlay_strength": 65
       }
     },
     "featured_collection": {
@@ -33,6 +34,7 @@
     "origin_story": {
       "type": "origin-story",
       "settings": {
+        "eyebrow": "Five regions, one country",
         "heading": "Where our coffee grows",
         "intro": "<p>Five regions, five very different cups. Each origin is roasted on its own to bring out what makes it distinct.</p>"
       },
@@ -42,9 +44,10 @@
           "settings": {
             "region_name": "Batangas",
             "province": "Luzon",
-            "altitude": 450,
-            "story": "<p>Grown in the volcanic soil around Mt. Batulao, this is Liberica country, the coffee your lola brewed before \"specialty coffee\" was a phrase anyone used. Bold, dark, and traditionally strong.</p>",
-            "product_link": "/products/batangas-barako-liberica"
+            "story": "<p>Grown in the volcanic soil around Mt. Batulao, this is Liberica country, the coffee your lola brewed before \"specialty coffee\" was a phrase anyone used. The beans are wet-hulled the traditional way, which is part of what gives barako its heavy body. Bold, dark, and traditionally strong.</p>",
+            "product": "batangas-barako-liberica",
+            "variety": "Liberica",
+            "process": "Wet-hulled"
           }
         },
         "benguet": {
@@ -52,9 +55,10 @@
           "settings": {
             "region_name": "Benguet",
             "province": "Cordillera",
-            "altitude": 1400,
-            "story": "<p>High in the Cordillera mountains, cool air and mineral-rich soil give Benguet's arabica a bright, floral character that's rare for Philippine coffee.</p>",
-            "product_link": "/products/benguet-arabica"
+            "story": "<p>High in the Cordillera mountains, cool air and mineral-rich soil give Benguet's arabica a bright, floral character that's rare for Philippine coffee. It's grown on small terraced plots alongside the region's famous vegetable gardens, then washed and sun-dried to bring out its natural sweetness.</p>",
+            "product": "benguet-arabica",
+            "variety": "Typica",
+            "process": "Washed"
           }
         },
         "sagada": {
@@ -62,9 +66,10 @@
           "settings": {
             "region_name": "Sagada",
             "province": "Mountain Province",
-            "altitude": 1500,
-            "story": "<p>Fog-covered slopes and steep elevation give this arabica a lively citrus snap, one of the brightest, cleanest cups we roast.</p>",
-            "product_link": "/products/sagada-arabica"
+            "story": "<p>Fog-covered slopes and steep elevation give this arabica a lively citrus snap, one of the brightest, cleanest cups we roast. Smallholder farmers grow it among Sagada's pine forests, where the cool, humid climate slows the cherries down for a more complex ripening.</p>",
+            "product": "sagada-arabica",
+            "variety": "Bourbon",
+            "process": "Washed"
           }
         },
         "mt-apo": {
@@ -72,9 +77,10 @@
           "settings": {
             "region_name": "Mt. Apo",
             "province": "Davao",
-            "altitude": 1700,
-            "story": "<p>Grown on the slopes of the Philippines' highest peak, at elevations most Philippine coffee never reaches. Complex, balanced, and naturally sweet.</p>",
-            "product_link": "/products/mt-apo-arabica"
+            "story": "<p>Grown on the slopes of the Philippines' highest peak, at elevations most Philippine coffee never reaches. A honey process leaves some of the fruit's mucilage on the bean during drying, which is part of why this lot turns out so complex, balanced, and naturally sweet.</p>",
+            "product": "mt-apo-arabica",
+            "variety": "Caturra",
+            "process": "Honey"
           }
         },
         "kalinga": {
@@ -82,9 +88,10 @@
           "settings": {
             "region_name": "Kalinga",
             "province": "Cordillera",
-            "altitude": 600,
-            "story": "<p>A bold, nutty robusta from the rugged Cordillera highlands, the working coffee farmers and market vendors have relied on for generations.</p>",
-            "product_link": "/products/kalinga-robusta"
+            "story": "<p>A bold, nutty robusta from the rugged Cordillera highlands, the working coffee farmers and market vendors have relied on for generations. It's natural-processed, dried right in the cherry, which deepens the chocolate and earth notes.</p>",
+            "product": "kalinga-robusta",
+            "variety": "Robusta",
+            "process": "Natural"
           }
         }
       },

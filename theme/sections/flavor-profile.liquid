@@ -19,35 +19,24 @@
 %}
 
 {% if has_flavor_data %}
-  <section class="flavor-profile" style="--flavor-bar-color: {{ section.settings.bar_color }};">
+  <section class="flavor-profile">
     {% if section.settings.heading != blank %}
       <h2 class="flavor-profile__heading">{{ section.settings.heading }}</h2>
     {% endif %}
 
     {% if roast_level != blank or origin_region != blank %}
-      <div class="flavor-profile__meta">
-        {% if roast_level != blank %}
-          <span class="flavor-profile__pill">{{ roast_level }} roast</span>
-        {% endif %}
-        {% if origin_region != blank %}
-          <span class="flavor-profile__origin">
-            {{ origin_region }}
-            {%- if altitude != blank %} &middot; {{ altitude }} m{% endif -%}
-          </span>
-        {% endif %}
-      </div>
+      <p class="flavor-profile__meta">
+        {{ roast_level }} roast
+        {%- if origin_region != blank %} &middot; {{ origin_region }}{% endif -%}
+        {%- if altitude != blank %} &middot; {{ altitude }} M{% endif -%}
+      </p>
     {% endif %}
 
     {% if flavor_notes_raw != blank %}
-      <ul class="flavor-profile__notes">
-        {% assign flavor_notes = flavor_notes_raw | split: ',' %}
-        {% for note in flavor_notes %}
-          <li class="flavor-profile__note">{{ note | strip }}</li>
-        {% endfor %}
-      </ul>
+      <p class="flavor-profile__notes">{{ flavor_notes_raw }}</p>
     {% endif %}
 
-    <div class="flavor-profile__bars">
+    <div class="flavor-profile__scales" style="--flavor-scale-color: {{ section.settings.bar_color }};">
       {% if acidity != blank %}
         {% assign acidity_label = 'sections.flavor_profile.acidity' | t %}
         {% render 'flavor-bar', label: acidity_label, value: acidity %}
@@ -66,89 +55,66 @@
 
 {% stylesheet %}
   .flavor-profile {
-    padding-block: var(--space-8);
+    padding-block: var(--section-padding);
   }
 
   .flavor-profile__heading {
-    font-family: var(--font-heading--family);
     font-size: var(--font-size-2xl);
     margin-bottom: var(--space-4);
   }
 
   .flavor-profile__meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
     margin-bottom: var(--space-4);
   }
 
-  .flavor-profile__pill {
-    display: inline-flex;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
-    background-color: var(--color-surface);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    text-transform: capitalize;
-  }
-
-  .flavor-profile__origin {
-    font-size: var(--font-size-sm);
-    color: color-mix(in srgb, var(--color-text) 75%, transparent);
-  }
-
   .flavor-profile__notes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    list-style: none;
-    padding: 0;
-    margin: 0 0 var(--space-6);
+    font-size: var(--font-size-md);
+    font-style: italic;
+    max-width: 40ch;
+    margin-bottom: var(--space-7);
   }
 
-  .flavor-profile__note {
-    padding: var(--space-1) var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-xs);
-    text-transform: capitalize;
-  }
-
-  .flavor-profile__bars {
+  .flavor-profile__scales {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    max-width: 28rem;
+    max-width: 24rem;
   }
 
-  /* Bars used by snippets/flavor-bar.liquid; scoped here since snippets
+  /* Scales used by snippets/flavor-bar.liquid; scoped here since snippets
      cannot declare their own stylesheet block. */
-  .flavor-bar {
-    display: grid;
-    grid-template-columns: 6rem 1fr 3rem;
+  .flavor-scale {
+    display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
-  .flavor-bar__label {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-  }
-  .flavor-bar__track {
-    height: 0.5rem;
-    border-radius: var(--radius-full);
-    background-color: var(--color-border);
-    overflow: hidden;
-  }
-  .flavor-bar__fill {
-    height: 100%;
-    border-radius: inherit;
-    background-color: var(--flavor-bar-color, var(--color-primary));
-  }
-  .flavor-bar__value {
+  .flavor-scale__label {
+    flex: 0 0 6rem;
     font-size: var(--font-size-xs);
-    text-align: right;
-    color: color-mix(in srgb, var(--color-text) 75%, transparent);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  .flavor-scale__marks {
+    display: flex;
+    gap: var(--space-2);
+  }
+  .flavor-scale__mark {
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1px solid var(--flavor-scale-color, var(--color-primary));
+    background-color: transparent;
+  }
+  .flavor-scale__mark--filled {
+    background-color: var(--flavor-scale-color, var(--color-primary));
+  }
+  .flavor-scale__value {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
   }
 {% endstylesheet %}
 
@@ -166,7 +132,7 @@
       "type": "color",
       "id": "bar_color",
       "label": "t:labels.bar_color",
-      "default": "#6B3E26"
+      "default": "#4A2C1D"
     }
   ],
   "presets": [

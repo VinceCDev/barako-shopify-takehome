@@ -1,8 +1,8 @@
 {% doc %}
-  Renders a labeled 1-5 bar with an accessible text value alongside it, so
-  the reading never depends on the fill color alone.
+  Renders a 1-5 scale as five small squares, with the number shown as real
+  text alongside so the reading never depends on the marks or color alone.
 
-  @param {string} label - The visible label for the bar (e.g. "Acidity")
+  @param {string} label - The visible label for the scale (e.g. "Acidity")
   @param {number} value - A value from 1 to 5
 
   @example
@@ -11,13 +11,14 @@
 
 {% liquid
   assign clamped_value = value | at_most: 5 | at_least: 0
-  assign percent = clamped_value | times: 20
 %}
 
-<div class="flavor-bar">
-  <span class="flavor-bar__label">{{ label }}</span>
-  <div class="flavor-bar__track" aria-hidden="true">
-    <div class="flavor-bar__fill" style="width: {{ percent }}%;"></div>
-  </div>
-  <span class="flavor-bar__value">{{ 'sections.flavor_profile.out_of_5' | t: value: clamped_value }}</span>
+<div class="flavor-scale">
+  <span class="flavor-scale__label">{{ label }}</span>
+  <span class="flavor-scale__marks" aria-hidden="true">
+    {% for i in (1..5) %}
+      <span class="flavor-scale__mark{% if i <= clamped_value %} flavor-scale__mark--filled{% endif %}"></span>
+    {% endfor %}
+  </span>
+  <span class="flavor-scale__value">{{ 'sections.flavor_profile.out_of_5' | t: value: clamped_value }}</span>
 </div>

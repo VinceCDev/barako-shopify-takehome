@@ -1,29 +1,44 @@
 {% comment %}
-  Homepage hero. Falls back to a warm brand-token gradient when no
-  background image is set.
+  Full-bleed homepage hero. Uses the merchant's image_picker image when
+  set; otherwise falls back to a bundled default photo
+  (assets/hero-background.jpg) so the hero never looks unfinished. Only
+  falls all the way back to a solid accent color if that asset is missing.
 {% endcomment %}
 
 <section
-  class="hero-kapihan full-width"
-  style="--hero-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};"
+  class="hero-kapihan full-bleed"
+  style="
+    --hero-overlay-color: {{ section.settings.overlay_color }};
+    --hero-overlay-strength: {{ section.settings.overlay_strength }}%;
+  "
 >
-  <div class="hero-kapihan__media{% unless section.settings.background_image %} hero-kapihan__media--fallback{% endunless %}">
+  {% liquid
+    assign fallback_image_url = 'hero-background.jpg' | asset_url
+  %}
+  <div class="hero-kapihan__media">
     {% if section.settings.background_image %}
-      {{
-        section.settings.background_image
-        | image_url: width: 2000
-        | image_tag:
-          class: 'hero-kapihan__image',
-          loading: 'eager',
-          fetchpriority: 'high',
-          sizes: '100vw',
-          widths: '750, 1100, 1500, 2000'
-      }}
+      {% liquid
+        assign focal_point = section.settings.background_image.presentation.focal_point | default: '50% 50%'
+        assign hero_image_style = 'object-position: ' | append: focal_point
+        assign hero_image = section.settings.background_image | image_url: width: 2400 | image_tag: class: 'hero-kapihan__image', loading: 'eager', fetchpriority: 'high', sizes: '100vw', widths: '750, 1100, 1500, 2000, 2400', style: hero_image_style
+      %}
+      {{ hero_image }}
+      <div class="hero-kapihan__overlay"></div>
+    {% else %}
+      <img
+        src="{{ fallback_image_url }}"
+        alt=""
+        width="2560"
+        height="1704"
+        class="hero-kapihan__image"
+        loading="eager"
+        fetchpriority="high"
+      >
+      <div class="hero-kapihan__overlay"></div>
     {% endif %}
-    <div class="hero-kapihan__overlay"></div>
   </div>
 
-  <div class="hero-kapihan__inner">
+  <div class="hero-kapihan__inner wrap">
     {% if section.settings.eyebrow != blank %}
       <p class="hero-kapihan__eyebrow">{{ section.settings.eyebrow }}</p>
     {% endif %}
@@ -44,7 +59,7 @@
           </a>
         {% endif %}
         {% if section.settings.secondary_button_label != blank %}
-          <a href="{{ section.settings.secondary_button_link | default: '#' }}" class="button button--outline">
+          <a href="{{ section.settings.secondary_button_link | default: '#' }}" class="text-link">
             {{ section.settings.secondary_button_label }}
           </a>
         {% endif %}
@@ -57,9 +72,14 @@
   .hero-kapihan {
     position: relative;
     display: flex;
-    align-items: center;
-    min-height: 32rem;
+    align-items: flex-end;
+    min-height: 80vh;
     color: var(--color-paper);
+  }
+  @media (min-width: 750px) {
+    .hero-kapihan {
+      min-height: 100vh;
+    }
   }
 
   .hero-kapihan__media {
@@ -67,6 +87,7 @@
     inset: 0;
     overflow: hidden;
     z-index: 0;
+    background-color: var(--color-primary);
   }
 
   .hero-kapihan__image {
@@ -77,68 +98,85 @@
     object-fit: cover;
   }
 
-  /* Tasteful fallback when no merchant image is set: a warm gradient built
-     entirely from brand design tokens. */
-  .hero-kapihan__media--fallback {
-    background:
-      radial-gradient(circle at 20% 15%, var(--color-terracotta) 0%, transparent 55%),
-      linear-gradient(135deg, var(--color-roast) 0%, var(--color-espresso) 100%);
-  }
-
+  /* Layered scrim: strongest behind the bottom-left text, fading to
+     transparent toward the top-right, so the image still reads clearly
+     away from the copy. */
+  /* A uniform baseline wash (so no part of the photo is ever left fully
+     uncovered) plus the stronger directional gradient on top, per the art
+     direction: strongest behind the bottom-left text, fading toward the
+     top-right. */
+  /* Three layers: a diagonal wash for the editorial "fade into the photo"
+     look, a flat full-width band at the bottom that guarantees the whole
+     text block (eyebrow through buttons) gets the SAME strong, uniform
+     coverage regardless of exactly where each line falls (the diagonal
+     alone let the topmost line — the eyebrow — land in a weaker part of
+     the falloff), and a light wash everywhere else so no part of the
+     photo is left fully uncovered. */
   .hero-kapihan__overlay {
     position: absolute;
     inset: 0;
-    background-color: var(--color-espresso);
-    opacity: var(--hero-overlay-opacity, 0.4);
+    background:
+      linear-gradient(
+        to top right,
+        color-mix(in srgb, var(--hero-overlay-color) var(--hero-overlay-strength), transparent) 0%,
+        transparent 70%
+      ),
+      linear-gradient(
+        to top,
+        color-mix(in srgb, var(--hero-overlay-color) var(--hero-overlay-strength), transparent) 0%,
+        color-mix(in srgb, var(--hero-overlay-color) var(--hero-overlay-strength), transparent) 42%,
+        transparent 78%
+      ),
+      color-mix(in srgb, var(--hero-overlay-color) 25%, transparent);
   }
 
   .hero-kapihan__inner {
     position: relative;
     z-index: 1;
-    width: 100%;
-    max-width: var(--page-width);
-    margin-inline: auto;
-    padding: var(--space-8) var(--page-margin);
+    padding-block: var(--space-8) var(--space-9);
   }
 
   .hero-kapihan__eyebrow {
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: var(--font-size-sm);
+    letter-spacing: var(--tracking-eyebrow);
+    font-size: var(--font-size-xs);
     font-weight: 600;
-    opacity: 0.85;
-    margin-bottom: var(--space-3);
+    opacity: 0.72;
+    margin-bottom: var(--space-4);
   }
 
   .hero-kapihan__heading {
-    font-family: var(--font-heading--family);
-    font-size: var(--font-size-3xl);
-    line-height: var(--line-height-tight);
-    max-width: 30ch;
+    font-size: clamp(2.5rem, 2.2rem + 3vw, 5rem);
+    max-width: 14ch;
   }
 
   .hero-kapihan__subheading {
-    margin-top: var(--space-4);
-    max-width: 45ch;
+    margin-top: var(--space-5);
+    max-width: 40ch;
     font-size: var(--font-size-md);
   }
 
   .hero-kapihan__actions {
-    margin-top: var(--space-6);
+    margin-top: var(--space-7);
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
+    align-items: center;
+    gap: var(--space-6);
   }
 
-  /* The default outline button assumes a light page background; on the
-     hero it needs to read against the dark image/gradient instead. */
-  .hero-kapihan .button--outline {
-    color: var(--color-paper);
-    border-color: var(--color-paper);
-  }
-  .hero-kapihan .button--outline:hover {
+  /* The hero sits on a dark image; invert the button to read against it,
+     while keeping it a solid ink/paper pairing everywhere else on the page. */
+  .hero-kapihan .button {
     background-color: var(--color-paper);
-    color: var(--color-espresso);
+    border-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+  .hero-kapihan .button:hover {
+    background-color: transparent;
+    color: var(--color-paper);
+  }
+  .hero-kapihan .text-link {
+    color: var(--color-paper);
   }
 {% endstylesheet %}
 
@@ -188,14 +226,20 @@
       "label": "t:labels.secondary_button_link"
     },
     {
+      "type": "color",
+      "id": "overlay_color",
+      "label": "t:labels.overlay_color",
+      "default": "#1B1612"
+    },
+    {
       "type": "range",
-      "id": "overlay_opacity",
-      "label": "t:labels.overlay_opacity",
+      "id": "overlay_strength",
+      "label": "t:labels.overlay_strength",
       "min": 0,
       "max": 90,
       "step": 5,
       "unit": "%",
-      "default": 40
+      "default": 65
     }
   ],
   "presets": [

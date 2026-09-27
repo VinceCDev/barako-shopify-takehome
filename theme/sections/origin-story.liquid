@@ -1,9 +1,18 @@
 {% comment %}
-  "Where our coffee grows" — a card per growing region. Desktop shows a
-  card grid; mobile switches to a horizontal scroll-snap row (CSS only).
+  "Where our coffee grows" — an editorial row per growing region, image
+  and text alternating sides on desktop. Always image-then-text in source
+  order so the stacked mobile layout reads the same regardless of side.
+  When a block links to a product, altitude and tasting notes are pulled
+  from that product's own metafields rather than duplicated as block
+  settings; variety and process have no metafield equivalent, so they
+  always come from the block.
 {% endcomment %}
 
 <section class="origin-story">
+  {% if section.settings.eyebrow != blank %}
+    <p class="origin-story__eyebrow">{{ section.settings.eyebrow }}</p>
+  {% endif %}
+
   {% if section.settings.heading != blank %}
     <h2 class="origin-story__heading">{{ section.settings.heading }}</h2>
   {% endif %}
@@ -15,37 +24,104 @@
   {% if section.blocks.size > 0 %}
     <div class="origin-story__list">
       {% for block in section.blocks %}
-        <article class="origin-card" {{ block.shopify_attributes }}>
-          {% if block.settings.image %}
-            {% render 'image',
-              class: 'origin-card__image',
-              image: block.settings.image,
-              width: 480,
-              height: 480,
-              crop: 'center'
-            %}
-          {% endif %}
+        {% liquid
+          assign is_reverse_row = forloop.index0 | modulo: 2
+          assign linked_product = block.settings.product
+          assign display_variety = block.settings.variety
+          assign display_process = block.settings.process
+          if linked_product != blank
+            assign display_altitude = linked_product.metafields.custom.altitude.value | default: block.settings.altitude
+            assign display_tasting_notes = linked_product.metafields.custom.flavor_notes.value | default: block.settings.tasting_notes
+          else
+            assign display_altitude = block.settings.altitude
+            assign display_tasting_notes = block.settings.tasting_notes
+          endif
+        %}
+        <article
+          class="origin-row grid-12{% if is_reverse_row == 1 %} origin-row--reverse{% endif %}"
+          {{ block.shopify_attributes }}
+        >
+          <div class="origin-row__media">
+            {% if block.settings.image %}
+              {% liquid
+                assign focal_point = block.settings.image.presentation.focal_point | default: '50% 50%'
+                assign origin_image_style = 'object-position: ' | append: focal_point
+                assign origin_image = block.settings.image | image_url: width: 1600 | image_tag: class: 'origin-row__image', loading: 'lazy', sizes: '(min-width: 64rem) 42vw, 100vw', widths: '450, 700, 900, 1200, 1600', style: origin_image_style
+              %}
+              <div class="hover-zoom">{{ origin_image }}</div>
+            {% else %}
+              {% comment %}
+                No merchant image picked yet: fall back to a bundled photo
+                named to match the region (assets/origin-<handle>.jpg).
+              {% endcomment %}
+              {% liquid
+                assign region_handle = block.settings.region_name | handleize
+                assign fallback_filename = 'origin-' | append: region_handle | append: '.jpg'
+              %}
+              {% if region_handle != blank %}
+                <div class="hover-zoom">
+                  <img
+                    src="{{ fallback_filename | asset_url }}"
+                    alt=""
+                    width="800"
+                    height="1000"
+                    class="origin-row__image"
+                    loading="lazy"
+                  >
+                </div>
+              {% endif %}
+            {% endif %}
+          </div>
 
-          <div class="origin-card__body">
+          <div class="origin-row__content">
             {% if block.settings.region_name != blank %}
-              <h3 class="origin-card__title">{{ block.settings.region_name }}</h3>
+              <h3 class="origin-row__title">{{ block.settings.region_name }}</h3>
             {% endif %}
 
-            {% if block.settings.province != blank %}
-              <p class="origin-card__province">{{ block.settings.province }}</p>
-            {% endif %}
-
-            {% if block.settings.altitude != blank %}
-              <p class="origin-card__altitude">{{ block.settings.altitude }} m above sea level</p>
+            {% if block.settings.province != blank or display_altitude != blank %}
+              <p class="origin-row__meta">
+                {{ block.settings.province }}
+                {%- if display_altitude != blank %} &middot; {{ display_altitude }} M{% endif -%}
+              </p>
             {% endif %}
 
             {% if block.settings.story != blank %}
-              <div class="origin-card__story">{{ block.settings.story }}</div>
+              <div class="origin-row__story">{{ block.settings.story }}</div>
             {% endif %}
 
-            {% if block.settings.product_link != blank %}
-              <a href="{{ block.settings.product_link }}" class="origin-card__link">
+            {% if display_altitude != blank or display_variety != blank or display_process != blank or display_tasting_notes != blank %}
+              <dl class="origin-row__facts">
+                {% if display_altitude != blank %}
+                  <div class="origin-row__fact">
+                    <dt>{{ 'sections.origin_story.altitude' | t }}</dt>
+                    <dd>{{ display_altitude }} m</dd>
+                  </div>
+                {% endif %}
+                {% if display_variety != blank %}
+                  <div class="origin-row__fact">
+                    <dt>{{ 'sections.origin_story.variety' | t }}</dt>
+                    <dd>{{ display_variety }}</dd>
+                  </div>
+                {% endif %}
+                {% if display_process != blank %}
+                  <div class="origin-row__fact">
+                    <dt>{{ 'sections.origin_story.process' | t }}</dt>
+                    <dd>{{ display_process }}</dd>
+                  </div>
+                {% endif %}
+                {% if display_tasting_notes != blank %}
+                  <div class="origin-row__fact">
+                    <dt>{{ 'sections.origin_story.tasting_notes' | t }}</dt>
+                    <dd>{{ display_tasting_notes }}</dd>
+                  </div>
+                {% endif %}
+              </dl>
+            {% endif %}
+
+            {% if linked_product != blank %}
+              <a href="{{ linked_product.url }}" class="text-link origin-row__link">
                 {{ 'sections.origin_story.shop_this_origin' | t }}
+                {% render 'icon', name: 'arrow-right' %}
               </a>
             {% endif %}
           </div>
@@ -57,100 +133,139 @@
 
 {% stylesheet %}
   .origin-story {
-    padding-block: var(--space-8);
+    padding-block: var(--section-padding);
+  }
+
+  .origin-story__eyebrow {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-eyebrow);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
   }
 
   .origin-story__heading {
-    font-family: var(--font-heading--family);
     font-size: var(--font-size-2xl);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
   }
 
   .origin-story__intro {
-    max-width: 60ch;
-    margin-bottom: var(--space-6);
-    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+    max-width: 55ch;
+    margin-bottom: var(--space-9);
+    font-size: var(--font-size-md);
+    color: var(--color-text-muted);
   }
 
   .origin-story__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: var(--space-6);
-  }
-
-  .origin-card {
     display: flex;
     flex-direction: column;
-    background-color: var(--color-surface);
-    border-radius: var(--radius-md);
-    overflow: hidden;
   }
 
-  .origin-card__image {
-    aspect-ratio: 1 / 1;
+  /* One consistent gap unit between rows (padding, not a stacked
+     padding+gap combo) so the rhythm reads evenly down the page. */
+  .origin-row {
+    padding-block: var(--space-8);
+    border-top: 1px solid var(--color-border);
+  }
+  .origin-row:first-child {
+    border-top: none;
+    padding-top: 0;
   }
 
-  .origin-card__body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-5);
+  .origin-row__media {
+    grid-column: span 12;
   }
 
-  .origin-card__title {
-    font-family: var(--font-heading--family);
-    font-size: var(--font-size-lg);
+  .origin-row__image {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
   }
 
-  .origin-card__province {
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-primary);
+  .origin-row__content {
+    grid-column: span 12;
+    padding-top: var(--space-5);
   }
 
-  .origin-card__altitude {
-    font-size: var(--font-size-xs);
-    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+  .origin-row__title {
+    font-size: var(--font-size-xl);
   }
 
-  .origin-card__story {
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
-  }
-  .origin-card__story p + p {
+  .origin-row__meta {
     margin-top: var(--space-2);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
   }
 
-  .origin-card__link {
-    margin-top: auto;
-    align-self: flex-start;
-    padding-top: var(--space-2);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-primary);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
+  .origin-row__story {
+    margin-top: var(--space-5);
+    max-width: 42ch;
+    font-size: var(--font-size-md);
   }
-  .origin-card__link:hover {
-    color: var(--color-primary-hover);
+  .origin-row__story p + p {
+    margin-top: var(--space-3);
   }
 
-  /* Mobile: horizontal scroll-snap row instead of a grid, no JavaScript. */
-  @media (max-width: 47.9375rem) {
-    .origin-story__list {
-      display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      gap: var(--space-4);
-      margin-inline: calc(var(--page-margin) * -1);
-      padding-inline: var(--page-margin);
-      padding-bottom: var(--space-3);
+  /* Definition list of quick specs. Two columns once there's room, so
+     four facts read as a compact grid rather than a long single column. */
+  .origin-row__facts {
+    margin: var(--space-6) 0 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4) var(--space-5);
+    max-width: 30rem;
+  }
+  .origin-row__fact dt {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  .origin-row__fact dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-base);
+  }
+
+  .origin-row__link {
+    margin-top: var(--space-6);
+    gap: var(--space-2);
+  }
+  .origin-row__link svg {
+    width: 1rem;
+    transition: transform var(--transition-fast);
+  }
+  .origin-row__link:hover svg {
+    transform: translateX(0.2em);
+  }
+
+  @media (min-width: 64rem) {
+    .origin-row {
+      align-items: start;
     }
-    .origin-card {
-      flex: 0 0 80%;
-      scroll-snap-align: start;
+    /* Image ~5/12, a full empty column as the gutter, text ~6/12. */
+    .origin-row__media {
+      grid-column: 1 / span 5;
+      order: 1;
+    }
+    .origin-row__image {
+      max-height: 35rem;
+    }
+    .origin-row__content {
+      grid-column: 7 / span 6;
+      order: 2;
+      padding-top: 0;
+    }
+    .origin-row--reverse .origin-row__media {
+      grid-column: 8 / span 5;
+      order: 2;
+    }
+    .origin-row--reverse .origin-row__content {
+      grid-column: 1 / span 6;
+      grid-row: 1;
+      order: 1;
     }
   }
 {% endstylesheet %}
@@ -159,6 +274,11 @@
 {
   "name": "t:general.origin_story",
   "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "t:labels.eyebrow"
+    },
     {
       "type": "inline_richtext",
       "id": "heading",
@@ -187,16 +307,6 @@
           "label": "t:labels.province"
         },
         {
-          "type": "range",
-          "id": "altitude",
-          "label": "t:labels.altitude",
-          "min": 0,
-          "max": 2500,
-          "step": 50,
-          "unit": "m",
-          "default": 500
-        },
-        {
           "type": "richtext",
           "id": "story",
           "label": "t:labels.story"
@@ -207,9 +317,40 @@
           "label": "t:labels.image"
         },
         {
-          "type": "url",
-          "id": "product_link",
-          "label": "t:labels.product_link"
+          "type": "product",
+          "id": "product",
+          "label": "t:labels.linked_product",
+          "info": "t:labels.linked_product_info"
+        },
+        {
+          "type": "header",
+          "content": "t:labels.origin_facts_header",
+          "info": "t:labels.origin_facts_info"
+        },
+        {
+          "type": "range",
+          "id": "altitude",
+          "label": "t:labels.altitude",
+          "min": 0,
+          "max": 2500,
+          "step": 50,
+          "unit": "m",
+          "default": 500
+        },
+        {
+          "type": "text",
+          "id": "variety",
+          "label": "t:labels.variety"
+        },
+        {
+          "type": "text",
+          "id": "process",
+          "label": "t:labels.process"
+        },
+        {
+          "type": "text",
+          "id": "tasting_notes",
+          "label": "t:labels.tasting_notes"
         }
       ]
     }

@@ -1,6 +1,6 @@
 {% comment %}
-  Step-by-step brewing guide. Steps are section-local blocks, rendered as
-  a numbered list.
+  Step-by-step brewing guide. Steps are section-local blocks, laid out as
+  a two-column editorial list: a large quiet numeral, then the content.
 {% endcomment %}
 
 <section class="brew-guide" id="brew-guide">
@@ -21,8 +21,9 @@
   {% if section.blocks.size > 0 %}
     <ol class="brew-guide__steps">
       {% for block in section.blocks %}
+        {% assign step_number = forloop.index | prepend: '00' | slice: -2, 2 %}
         <li class="brew-guide__step" {{ block.shopify_attributes }}>
-          <div class="brew-guide__step-number" aria-hidden="true">{{ forloop.index }}</div>
+          <div class="brew-guide__step-number" aria-hidden="true">{{ step_number }}</div>
 
           <div class="brew-guide__step-body">
             <div class="brew-guide__step-heading">
@@ -37,9 +38,25 @@
             {% if block.settings.description != blank %}
               <div class="brew-guide__step-description">{{ block.settings.description }}</div>
             {% endif %}
+          </div>
 
+          <div class="brew-guide__step-media">
             {% if block.settings.image %}
-              {% render 'image', class: 'brew-guide__step-image', image: block.settings.image, width: 480 %}
+              {{ block.settings.image | image_url: width: 700 | image_tag: class: 'brew-guide__step-image', loading: 'lazy' }}
+            {% else %}
+              {% comment %}
+                No merchant image picked yet: fall back to a bundled photo
+                for this step's position (assets/brew-step-<n>.jpg).
+              {% endcomment %}
+              {% assign fallback_filename = 'brew-step-' | append: forloop.index | append: '.jpg' %}
+              <img
+                src="{{ fallback_filename | asset_url }}"
+                alt=""
+                width="900"
+                height="600"
+                class="brew-guide__step-image"
+                loading="lazy"
+              >
             {% endif %}
           </div>
         </li>
@@ -50,98 +67,111 @@
 
 {% stylesheet %}
   .brew-guide {
-    padding-block: var(--space-8);
+    padding-block: var(--section-padding);
   }
 
   .brew-guide__header {
-    max-width: 45rem;
-    margin-bottom: var(--space-6);
+    max-width: 40rem;
+    margin-bottom: var(--space-9);
   }
 
   .brew-guide__heading {
-    font-family: var(--font-heading--family);
     font-size: var(--font-size-2xl);
   }
 
   .brew-guide__method {
-    margin-top: var(--space-2);
-    font-size: var(--font-size-sm);
+    margin-top: var(--space-3);
+    font-size: var(--font-size-xs);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-primary);
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
   }
 
   .brew-guide__intro {
-    margin-top: var(--space-3);
-    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+    margin-top: var(--space-4);
+    font-size: var(--font-size-md);
+    color: var(--color-text-muted);
   }
 
   .brew-guide__steps {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-    max-width: 42rem;
+    list-style: none;
     margin: 0;
     padding: 0;
-    list-style: none;
+    max-width: 48rem;
+  }
+  @media (min-width: 48rem) {
+    .brew-guide__steps {
+      max-width: none;
+    }
   }
 
   .brew-guide__step {
-    display: flex;
-    gap: var(--space-4);
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: var(--space-6);
+    padding-block: var(--space-7);
+    border-top: 1px solid var(--color-border);
+  }
+  /* The image stacks full-width below the text on mobile. */
+  .brew-guide__step-media {
+    grid-column: 1 / -1;
+    margin-top: var(--space-3);
+  }
+  @media (min-width: 48rem) {
+    .brew-guide__step {
+      grid-template-columns: 4rem 1fr 22rem;
+      align-items: center;
+    }
+    .brew-guide__step-media {
+      grid-column: 3;
+      grid-row: 1;
+      margin-top: 0;
+    }
+  }
+  .brew-guide__step:first-child {
+    border-top: none;
+    padding-top: 0;
   }
 
   .brew-guide__step-number {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--radius-full);
-    background-color: var(--color-primary);
-    color: var(--color-on-primary);
-    font-family: var(--font-heading--family);
-    font-size: var(--font-size-md);
-    font-weight: 700;
-  }
-
-  .brew-guide__step-body {
-    flex: 1 1 auto;
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    letter-spacing: var(--tracking-tight);
+    line-height: 1;
+    color: var(--color-text-muted);
   }
 
   .brew-guide__step-heading {
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .brew-guide__step-title {
-    font-family: var(--font-heading--family);
     font-size: var(--font-size-lg);
   }
 
   .brew-guide__step-time {
-    padding: 0.15rem var(--space-2);
-    border-radius: var(--radius-full);
-    background-color: var(--color-surface);
-    color: var(--color-primary);
     font-size: var(--font-size-xs);
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
   }
 
   .brew-guide__step-description {
-    margin-top: var(--space-2);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
+    margin-top: var(--space-3);
+    max-width: 40ch;
+    font-size: var(--font-size-md);
   }
 
   .brew-guide__step-image {
-    margin-top: var(--space-3);
-    max-width: 20rem;
-    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 22rem;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
   }
 {% endstylesheet %}
 
