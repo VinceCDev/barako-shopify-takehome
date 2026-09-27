@@ -9,13 +9,13 @@
         {{ 'icon-menu.svg' | inline_asset_content }}
         <span>{{ 'general.menu' | t }}</span>
       </summary>
-
-      <nav class="header__menu" aria-label="{{ 'general.menu' | t }}">
-        {% for link in section.settings.menu.links %}
-          {{ link.title | link_to: link.url }}
-        {% endfor %}
-      </nav>
     </details>
+
+    <nav class="header__menu" aria-label="{{ 'general.menu' | t }}">
+      {% for link in section.settings.menu.links %}
+        {{ link.title | link_to: link.url }}
+      {% endfor %}
+    </nav>
 
     <div class="header__icons">
       {% if shop.customer_accounts_enabled %}
@@ -88,8 +88,11 @@
     width: 1.5rem;
   }
 
+  /* Mobile: the nav is a sibling of <details>, hidden by default and shown
+     via the [open] attribute, not by nesting it inside the disclosure.
+     This avoids fighting the UA rule that hides closed-details children. */
   .header__menu {
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: var(--space-1);
     position: absolute;
@@ -99,6 +102,9 @@
     padding: var(--space-4) var(--page-margin) var(--space-6);
     background-color: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
+  }
+  .header__nav-toggle[open] ~ .header__menu {
+    display: flex;
   }
 
   .header__menu a {
@@ -145,15 +151,13 @@
     line-height: 1;
   }
 
-  @media (min-width: 48rem) {
+  @media (min-width: 750px) {
     .header__nav-toggle {
-      order: 2;
-      display: contents;
-    }
-    .header__nav-toggle-button {
       display: none;
     }
     .header__menu {
+      display: flex;
+      order: 2;
       position: static;
       flex-direction: row;
       align-items: center;
@@ -161,7 +165,6 @@
       padding: 0;
       background-color: transparent;
       border-bottom: none;
-      display: flex !important;
     }
     .header__menu a {
       padding: 0;
@@ -180,7 +183,8 @@
     {
       "type": "link_list",
       "id": "menu",
-      "label": "t:labels.menu"
+      "label": "t:labels.menu",
+      "default": "main-menu"
     },
     {
       "type": "link_list",
