@@ -1,0 +1,23 @@
+{% doc %}
+  Renders a labeled 1-5 bar with an accessible text value alongside it, so
+  the reading never depends on the fill color alone.
+
+  @param {string} label - The visible label for the bar (e.g. "Acidity")
+  @param {number} value - A value from 1 to 5
+
+  @example
+  {% render 'flavor-bar', label: 'Acidity', value: product.metafields.custom.acidity.value %}
+{% enddoc %}
+
+{% liquid
+  assign clamped_value = value | at_most: 5 | at_least: 0
+  assign percent = clamped_value | times: 20
+%}
+
+<div class="flavor-bar">
+  <span class="flavor-bar__label">{{ label }}</span>
+  <div class="flavor-bar__track" aria-hidden="true">
+    <div class="flavor-bar__fill" style="width: {{ percent }}%;"></div>
+  </div>
+  <span class="flavor-bar__value">{{ 'sections.flavor_profile.out_of_5' | t: value: clamped_value }}</span>
+</div>

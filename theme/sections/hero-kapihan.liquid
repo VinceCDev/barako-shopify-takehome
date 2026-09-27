@@ -1,0 +1,207 @@
+{% comment %}
+  Homepage hero. Falls back to a warm brand-token gradient when no
+  background image is set.
+{% endcomment %}
+
+<section
+  class="hero-kapihan full-width"
+  style="--hero-overlay-opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};"
+>
+  <div class="hero-kapihan__media{% unless section.settings.background_image %} hero-kapihan__media--fallback{% endunless %}">
+    {% if section.settings.background_image %}
+      {{
+        section.settings.background_image
+        | image_url: width: 2000
+        | image_tag:
+          class: 'hero-kapihan__image',
+          loading: 'eager',
+          fetchpriority: 'high',
+          sizes: '100vw',
+          widths: '750, 1100, 1500, 2000'
+      }}
+    {% endif %}
+    <div class="hero-kapihan__overlay"></div>
+  </div>
+
+  <div class="hero-kapihan__inner">
+    {% if section.settings.eyebrow != blank %}
+      <p class="hero-kapihan__eyebrow">{{ section.settings.eyebrow }}</p>
+    {% endif %}
+
+    {% if section.settings.heading != blank %}
+      <h1 class="hero-kapihan__heading">{{ section.settings.heading }}</h1>
+    {% endif %}
+
+    {% if section.settings.subheading != blank %}
+      <div class="hero-kapihan__subheading">{{ section.settings.subheading }}</div>
+    {% endif %}
+
+    {% if section.settings.primary_button_label != blank or section.settings.secondary_button_label != blank %}
+      <div class="hero-kapihan__actions">
+        {% if section.settings.primary_button_label != blank %}
+          <a href="{{ section.settings.primary_button_link | default: '#' }}" class="button">
+            {{ section.settings.primary_button_label }}
+          </a>
+        {% endif %}
+        {% if section.settings.secondary_button_label != blank %}
+          <a href="{{ section.settings.secondary_button_link | default: '#' }}" class="button button--outline">
+            {{ section.settings.secondary_button_label }}
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+{% stylesheet %}
+  .hero-kapihan {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 32rem;
+    color: var(--color-paper);
+  }
+
+  .hero-kapihan__media {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .hero-kapihan__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  /* Tasteful fallback when no merchant image is set: a warm gradient built
+     entirely from brand design tokens. */
+  .hero-kapihan__media--fallback {
+    background:
+      radial-gradient(circle at 20% 15%, var(--color-terracotta) 0%, transparent 55%),
+      linear-gradient(135deg, var(--color-roast) 0%, var(--color-espresso) 100%);
+  }
+
+  .hero-kapihan__overlay {
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-espresso);
+    opacity: var(--hero-overlay-opacity, 0.4);
+  }
+
+  .hero-kapihan__inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: var(--page-width);
+    margin-inline: auto;
+    padding: var(--space-8) var(--page-margin);
+  }
+
+  .hero-kapihan__eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    opacity: 0.85;
+    margin-bottom: var(--space-3);
+  }
+
+  .hero-kapihan__heading {
+    font-family: var(--font-heading--family);
+    font-size: var(--font-size-3xl);
+    line-height: var(--line-height-tight);
+    max-width: 30ch;
+  }
+
+  .hero-kapihan__subheading {
+    margin-top: var(--space-4);
+    max-width: 45ch;
+    font-size: var(--font-size-md);
+  }
+
+  .hero-kapihan__actions {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  /* The default outline button assumes a light page background; on the
+     hero it needs to read against the dark image/gradient instead. */
+  .hero-kapihan .button--outline {
+    color: var(--color-paper);
+    border-color: var(--color-paper);
+  }
+  .hero-kapihan .button--outline:hover {
+    background-color: var(--color-paper);
+    color: var(--color-espresso);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.hero",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "background_image",
+      "label": "t:labels.background_image"
+    },
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "t:labels.eyebrow"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Barako &amp; Co."
+    },
+    {
+      "type": "richtext",
+      "id": "subheading",
+      "label": "t:labels.subheading"
+    },
+    {
+      "type": "text",
+      "id": "primary_button_label",
+      "label": "t:labels.primary_button_label"
+    },
+    {
+      "type": "url",
+      "id": "primary_button_link",
+      "label": "t:labels.primary_button_link"
+    },
+    {
+      "type": "text",
+      "id": "secondary_button_label",
+      "label": "t:labels.secondary_button_label"
+    },
+    {
+      "type": "url",
+      "id": "secondary_button_link",
+      "label": "t:labels.secondary_button_link"
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "t:labels.overlay_opacity",
+      "min": 0,
+      "max": 90,
+      "step": 5,
+      "unit": "%",
+      "default": 40
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.hero"
+    }
+  ]
+}
+{% endschema %}

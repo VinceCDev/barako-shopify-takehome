@@ -1,0 +1,178 @@
+{% comment %}
+  Product-page section that reads coffee-specific metafields. Renders
+  nothing at all when a product has no coffee metafields (e.g. gear).
+{% endcomment %}
+
+{% liquid
+  assign roast_level = product.metafields.custom.roast_level.value
+  assign flavor_notes_raw = product.metafields.custom.flavor_notes.value
+  assign origin_region = product.metafields.custom.origin_region.value
+  assign altitude = product.metafields.custom.altitude.value
+  assign acidity = product.metafields.custom.acidity.value
+  assign body_score = product.metafields.custom.body.value
+  assign sweetness = product.metafields.custom.sweetness.value
+
+  assign has_flavor_data = false
+  if roast_level != blank or acidity != blank or body_score != blank or sweetness != blank
+    assign has_flavor_data = true
+  endif
+%}
+
+{% if has_flavor_data %}
+  <section class="flavor-profile" style="--flavor-bar-color: {{ section.settings.bar_color }};">
+    {% if section.settings.heading != blank %}
+      <h2 class="flavor-profile__heading">{{ section.settings.heading }}</h2>
+    {% endif %}
+
+    {% if roast_level != blank or origin_region != blank %}
+      <div class="flavor-profile__meta">
+        {% if roast_level != blank %}
+          <span class="flavor-profile__pill">{{ roast_level }} roast</span>
+        {% endif %}
+        {% if origin_region != blank %}
+          <span class="flavor-profile__origin">
+            {{ origin_region }}
+            {%- if altitude != blank %} &middot; {{ altitude }} m{% endif -%}
+          </span>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if flavor_notes_raw != blank %}
+      <ul class="flavor-profile__notes">
+        {% assign flavor_notes = flavor_notes_raw | split: ',' %}
+        {% for note in flavor_notes %}
+          <li class="flavor-profile__note">{{ note | strip }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="flavor-profile__bars">
+      {% if acidity != blank %}
+        {% assign acidity_label = 'sections.flavor_profile.acidity' | t %}
+        {% render 'flavor-bar', label: acidity_label, value: acidity %}
+      {% endif %}
+      {% if body_score != blank %}
+        {% assign body_label = 'sections.flavor_profile.body' | t %}
+        {% render 'flavor-bar', label: body_label, value: body_score %}
+      {% endif %}
+      {% if sweetness != blank %}
+        {% assign sweetness_label = 'sections.flavor_profile.sweetness' | t %}
+        {% render 'flavor-bar', label: sweetness_label, value: sweetness %}
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+
+{% stylesheet %}
+  .flavor-profile {
+    padding-block: var(--space-8);
+  }
+
+  .flavor-profile__heading {
+    font-family: var(--font-heading--family);
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-4);
+  }
+
+  .flavor-profile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .flavor-profile__pill {
+    display: inline-flex;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .flavor-profile__origin {
+    font-size: var(--font-size-sm);
+    color: color-mix(in srgb, var(--color-text) 75%, transparent);
+  }
+
+  .flavor-profile__notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-6);
+  }
+
+  .flavor-profile__note {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    text-transform: capitalize;
+  }
+
+  .flavor-profile__bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: 28rem;
+  }
+
+  /* Bars used by snippets/flavor-bar.liquid; scoped here since snippets
+     cannot declare their own stylesheet block. */
+  .flavor-bar {
+    display: grid;
+    grid-template-columns: 6rem 1fr 3rem;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .flavor-bar__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+  .flavor-bar__track {
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-border);
+    overflow: hidden;
+  }
+  .flavor-bar__fill {
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--flavor-bar-color, var(--color-primary));
+  }
+  .flavor-bar__value {
+    font-size: var(--font-size-xs);
+    text-align: right;
+    color: color-mix(in srgb, var(--color-text) 75%, transparent);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.flavor_profile",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Flavor profile"
+    },
+    {
+      "type": "color",
+      "id": "bar_color",
+      "label": "t:labels.bar_color",
+      "default": "#6B3E26"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.flavor_profile"
+    }
+  ]
+}
+{% endschema %}

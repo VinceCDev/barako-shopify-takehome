@@ -1,0 +1,223 @@
+{% comment %}
+  "Where our coffee grows" — a card per growing region. Desktop shows a
+  card grid; mobile switches to a horizontal scroll-snap row (CSS only).
+{% endcomment %}
+
+<section class="origin-story">
+  {% if section.settings.heading != blank %}
+    <h2 class="origin-story__heading">{{ section.settings.heading }}</h2>
+  {% endif %}
+
+  {% if section.settings.intro != blank %}
+    <div class="origin-story__intro">{{ section.settings.intro }}</div>
+  {% endif %}
+
+  {% if section.blocks.size > 0 %}
+    <div class="origin-story__list">
+      {% for block in section.blocks %}
+        <article class="origin-card" {{ block.shopify_attributes }}>
+          {% if block.settings.image %}
+            {% render 'image',
+              class: 'origin-card__image',
+              image: block.settings.image,
+              width: 480,
+              height: 480,
+              crop: 'center'
+            %}
+          {% endif %}
+
+          <div class="origin-card__body">
+            {% if block.settings.region_name != blank %}
+              <h3 class="origin-card__title">{{ block.settings.region_name }}</h3>
+            {% endif %}
+
+            {% if block.settings.province != blank %}
+              <p class="origin-card__province">{{ block.settings.province }}</p>
+            {% endif %}
+
+            {% if block.settings.altitude != blank %}
+              <p class="origin-card__altitude">{{ block.settings.altitude }} m above sea level</p>
+            {% endif %}
+
+            {% if block.settings.story != blank %}
+              <div class="origin-card__story">{{ block.settings.story }}</div>
+            {% endif %}
+
+            {% if block.settings.product_link != blank %}
+              <a href="{{ block.settings.product_link }}" class="origin-card__link">
+                {{ 'sections.origin_story.shop_this_origin' | t }}
+              </a>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+
+{% stylesheet %}
+  .origin-story {
+    padding-block: var(--space-8);
+  }
+
+  .origin-story__heading {
+    font-family: var(--font-heading--family);
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .origin-story__intro {
+    max-width: 60ch;
+    margin-bottom: var(--space-6);
+    color: color-mix(in srgb, var(--color-text) 85%, transparent);
+  }
+
+  .origin-story__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--space-6);
+  }
+
+  .origin-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .origin-card__image {
+    aspect-ratio: 1 / 1;
+  }
+
+  .origin-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+  }
+
+  .origin-card__title {
+    font-family: var(--font-heading--family);
+    font-size: var(--font-size-lg);
+  }
+
+  .origin-card__province {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-primary);
+  }
+
+  .origin-card__altitude {
+    font-size: var(--font-size-xs);
+    color: color-mix(in srgb, var(--color-text) 70%, transparent);
+  }
+
+  .origin-card__story {
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+  }
+  .origin-card__story p + p {
+    margin-top: var(--space-2);
+  }
+
+  .origin-card__link {
+    margin-top: auto;
+    align-self: flex-start;
+    padding-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .origin-card__link:hover {
+    color: var(--color-primary-hover);
+  }
+
+  /* Mobile: horizontal scroll-snap row instead of a grid, no JavaScript. */
+  @media (max-width: 47.9375rem) {
+    .origin-story__list {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: var(--space-4);
+      margin-inline: calc(var(--page-margin) * -1);
+      padding-inline: var(--page-margin);
+      padding-bottom: var(--space-3);
+    }
+    .origin-card {
+      flex: 0 0 80%;
+      scroll-snap-align: start;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.origin_story",
+  "settings": [
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "t:labels.heading",
+      "default": "Where our coffee grows"
+    },
+    {
+      "type": "richtext",
+      "id": "intro",
+      "label": "t:labels.intro_text"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "origin",
+      "name": "t:general.origin",
+      "settings": [
+        {
+          "type": "text",
+          "id": "region_name",
+          "label": "t:labels.region_name"
+        },
+        {
+          "type": "text",
+          "id": "province",
+          "label": "t:labels.province"
+        },
+        {
+          "type": "range",
+          "id": "altitude",
+          "label": "t:labels.altitude",
+          "min": 0,
+          "max": 2500,
+          "step": 50,
+          "unit": "m",
+          "default": 500
+        },
+        {
+          "type": "richtext",
+          "id": "story",
+          "label": "t:labels.story"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "t:labels.image"
+        },
+        {
+          "type": "url",
+          "id": "product_link",
+          "label": "t:labels.product_link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:general.origin_story"
+    }
+  ]
+}
+{% endschema %}

@@ -9,12 +9,138 @@
  */
 {
   "sections": {
-    "main": {
-      "type": "hello-world",
-      "settings": {}
+    "hero": {
+      "type": "hero-kapihan",
+      "settings": {
+        "eyebrow": "Single-origin Philippine coffee",
+        "heading": "Coffee from the kapihan, roasted for today",
+        "subheading": "<p>We roast small batches of Batangas, Benguet, Sagada, Mt. Apo, and Kalinga coffee, sourced straight from the farmers who grow it.</p>",
+        "primary_button_label": "Shop coffee",
+        "primary_button_link": "/collections/coffee",
+        "secondary_button_label": "How we brew",
+        "secondary_button_link": "#brew-guide",
+        "overlay_opacity": 45
+      }
+    },
+    "featured_collection": {
+      "type": "featured-collection",
+      "settings": {
+        "heading": "Shop our coffees",
+        "collection": "coffee",
+        "products_to_show": 6
+      }
+    },
+    "origin_story": {
+      "type": "origin-story",
+      "settings": {
+        "heading": "Where our coffee grows",
+        "intro": "<p>Five regions, five very different cups. Each origin is roasted on its own to bring out what makes it distinct.</p>"
+      },
+      "blocks": {
+        "batangas": {
+          "type": "origin",
+          "settings": {
+            "region_name": "Batangas",
+            "province": "Luzon",
+            "altitude": 450,
+            "story": "<p>Grown in the volcanic soil around Mt. Batulao, this is Liberica country, the coffee your lola brewed before \"specialty coffee\" was a phrase anyone used. Bold, dark, and traditionally strong.</p>",
+            "product_link": "/products/batangas-barako-liberica"
+          }
+        },
+        "benguet": {
+          "type": "origin",
+          "settings": {
+            "region_name": "Benguet",
+            "province": "Cordillera",
+            "altitude": 1400,
+            "story": "<p>High in the Cordillera mountains, cool air and mineral-rich soil give Benguet's arabica a bright, floral character that's rare for Philippine coffee.</p>",
+            "product_link": "/products/benguet-arabica"
+          }
+        },
+        "sagada": {
+          "type": "origin",
+          "settings": {
+            "region_name": "Sagada",
+            "province": "Mountain Province",
+            "altitude": 1500,
+            "story": "<p>Fog-covered slopes and steep elevation give this arabica a lively citrus snap, one of the brightest, cleanest cups we roast.</p>",
+            "product_link": "/products/sagada-arabica"
+          }
+        },
+        "mt-apo": {
+          "type": "origin",
+          "settings": {
+            "region_name": "Mt. Apo",
+            "province": "Davao",
+            "altitude": 1700,
+            "story": "<p>Grown on the slopes of the Philippines' highest peak, at elevations most Philippine coffee never reaches. Complex, balanced, and naturally sweet.</p>",
+            "product_link": "/products/mt-apo-arabica"
+          }
+        },
+        "kalinga": {
+          "type": "origin",
+          "settings": {
+            "region_name": "Kalinga",
+            "province": "Cordillera",
+            "altitude": 600,
+            "story": "<p>A bold, nutty robusta from the rugged Cordillera highlands, the working coffee farmers and market vendors have relied on for generations.</p>",
+            "product_link": "/products/kalinga-robusta"
+          }
+        }
+      },
+      "block_order": ["batangas", "benguet", "sagada", "mt-apo", "kalinga"]
+    },
+    "brew_guide": {
+      "type": "brew-guide",
+      "settings": {
+        "heading": "Brew it our way",
+        "method_name": "Pour Over",
+        "intro": "<p>Our house method for a clean, balanced cup. Works well with any of our medium or light roasts.</p>"
+      },
+      "blocks": {
+        "rinse": {
+          "type": "step",
+          "settings": {
+            "title": "Rinse and warm",
+            "description": "<p>Rinse your paper or cloth filter with hot water to remove any papery taste, and warm your dripper and cup at the same time.</p>",
+            "time": "0:00"
+          }
+        },
+        "grounds": {
+          "type": "step",
+          "settings": {
+            "title": "Add your grounds",
+            "description": "<p>Add coffee ground for pour over, medium-fine, about 18g for a single cup. Give the bed a gentle shake to level it out.</p>",
+            "time": "0:30"
+          }
+        },
+        "bloom": {
+          "type": "step",
+          "settings": {
+            "title": "Bloom",
+            "description": "<p>Pour just enough hot water (about 93&deg;C / 200&deg;F) to saturate the grounds, roughly double their weight, and let it bloom.</p>",
+            "time": "0:45"
+          }
+        },
+        "pour": {
+          "type": "step",
+          "settings": {
+            "title": "Pour in stages",
+            "description": "<p>Continue pouring in slow, concentric circles, adding water in two or three stages and keeping the water level steady.</p>",
+            "time": "2:30"
+          }
+        },
+        "drain": {
+          "type": "step",
+          "settings": {
+            "title": "Drain and serve",
+            "description": "<p>Let the remaining water drain through fully, then remove the dripper and enjoy your cup while it's hot.</p>",
+            "time": "3:30"
+          }
+        }
+      },
+      "block_order": ["rinse", "grounds", "bloom", "pour", "drain"]
     }
   },
-  "order": [
-    "main"
-  ]
+  "order": ["hero", "featured_collection", "origin_story", "brew_guide"]
 }

@@ -59,5 +59,19 @@
     "submit": "Search",
     "no_results_html": "No results found for {{ terms }}",
     "results_for_html": "{{ count }} results found for {{ terms }}"
+  },
+  "sections": {
+    "featured_collection": {
+      "view_all": "View all"
+    },
+    "origin_story": {
+      "shop_this_origin": "Shop this origin"
+    },
+    "flavor_profile": {
+      "acidity": "Acidity",
+      "body": "Body",
+      "sweetness": "Sweetness",
+      "out_of_5": "{{ value }} / 5"
+    }
   }
 }
