@@ -101,6 +101,18 @@
         '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v5"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor" stroke="none"/></svg>',
     };
 
+    /*
+     * DOCU: Builds and displays a toast element in the toast region,
+     * auto-dismissing it after a short delay.
+     * @param {string} message - The toast's body message.
+     * @param {Object} [options] - Optional display options.
+     * @param {string} [options.type] - 'success' (default) or 'error'.
+     * @param {string} [options.title] - Overrides the default title for the type.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function show(message, options) {
       if (!region || !message) return;
       options = options || {};
@@ -172,6 +184,16 @@
     /* For actions that reload the page right after (removing a cart line,
        for example) — a toast shown immediately before navigation never
        gets to animate in. This stashes it for the next page load instead. */
+    /*
+     * DOCU: Stashes a toast to show on the next page load instead of
+     * showing it immediately, for actions that reload right after.
+     * @param {string} message - The toast's body message.
+     * @param {Object} [options] - Optional display options (see show()).
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function showAfterReload(message, options) {
       try {
         sessionStorage.setItem(PENDING_KEY, JSON.stringify({ message: message, options: options || {} }));
@@ -180,6 +202,14 @@
       }
     }
 
+    /*
+     * DOCU: Shows any toast stashed by showAfterReload() on the previous
+     * page, once, immediately on load.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     (function showPending() {
       var raw;
       try {

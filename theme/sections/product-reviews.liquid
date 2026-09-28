@@ -266,6 +266,15 @@
     var emptyEl = root.querySelector('[data-reviews-empty]');
     var form = root.querySelector('[data-review-form]');
 
+    /*
+     * DOCU: Reads the stored list of reviews for this product.
+     * @returns {Object[]} - The stored reviews, or an empty array if
+     *   none stored or storage is unavailable.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function readReviews() {
       try {
         var raw = window.localStorage.getItem(storageKey);
@@ -275,6 +284,14 @@
       }
     }
 
+    /*
+     * DOCU: Persists the given list of reviews for this product.
+     * @param {Object[]} reviews - The full reviews list to save.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function writeReviews(reviews) {
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(reviews));
@@ -283,11 +300,30 @@
       }
     }
 
+    /*
+     * DOCU: Grabs a star icon's markup from an existing star on the page
+     * to reuse when rendering review stars.
+     * @returns {string} - The star SVG's outerHTML, or an empty string
+     *   if no template star element is found.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function starSvg() {
       var template = root.querySelector('.product-reviews__star svg, .product-reviews__rating-star svg');
       return template ? template.outerHTML : '';
     }
 
+    /*
+     * DOCU: Builds a list item element for a single review.
+     * @param {Object} review - The review to render (name, date, rating, comment).
+     * @returns {HTMLElement} - The constructed <li> element.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function renderReview(review) {
       var li = document.createElement('li');
       li.className = 'product-reviews__item';
@@ -328,6 +364,14 @@
       return li;
     }
 
+    /*
+     * DOCU: Re-renders the full reviews list from storage and toggles
+     * the empty-state message.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function renderAll() {
       var reviews = readReviews();
       listEl.innerHTML = '';
@@ -342,6 +386,14 @@
     var ratingPicker = root.querySelector('[data-rating-picker]');
     if (ratingPicker) {
       var starLabels = ratingPicker.querySelectorAll('[data-rating-star]');
+      /*
+       * DOCU: Highlights the rating picker's stars up to the given value.
+       * @param {number} value - The number of stars to mark active.
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       var highlight = function (value) {
         starLabels.forEach(function (label) {
           label.classList.toggle('is-active', parseInt(label.getAttribute('data-rating-star'), 10) <= value);

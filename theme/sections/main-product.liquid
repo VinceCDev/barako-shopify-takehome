@@ -424,10 +424,29 @@
     var soldOutText = submitText ? submitText.getAttribute('data-sold-out-text') : 'Sold out';
     var unavailableText = submitText ? submitText.getAttribute('data-unavailable-text') : 'Unavailable';
 
+    /*
+     * DOCU: Formats a cent amount as a Philippine peso display string.
+     * @param {number} cents - The amount in cents.
+     * @returns {string} - The formatted peso amount, e.g. "₱100.00".
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function moneyFormat(cents) {
       return '₱' + (cents / 100).toFixed(2);
     }
 
+    /*
+     * DOCU: Finds the product variant matching the currently checked
+     * option inputs.
+     * @returns {Object|null} - The matching variant, or null if none of
+     *   the loaded variants match every checked option.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function findMatchingVariant() {
       if (!variants) return null;
       var selected = {};
@@ -443,6 +462,17 @@
       );
     }
 
+    /*
+     * DOCU: Applies a selected variant's state to the form — the hidden
+     * variant id, price display, submit button availability/text, and
+     * the page URL's variant query param.
+     * @param {Object|null} variant - The variant to apply, or null if no
+     *   variant matches the current option selection.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function applyVariant(variant) {
       if (!variant) {
         if (submitButton) submitButton.disabled = true;

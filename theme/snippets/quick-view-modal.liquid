@@ -231,6 +231,15 @@
     var linkEl = dialog.querySelector('[data-quick-view-link]');
     var closeButton = dialog.querySelector('[data-quick-view-close]');
 
+    /*
+     * DOCU: Formats a cent amount as a Philippine peso display string.
+     * @param {number} cents - The amount in cents.
+     * @returns {string} - The formatted peso amount, e.g. "₱100.00".
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function moneyFormat(cents) {
       return '₱' + (cents / 100).toFixed(2);
     }

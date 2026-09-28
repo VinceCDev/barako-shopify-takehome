@@ -108,6 +108,15 @@
     var confirmButton = dialog.querySelector('[data-confirm-confirm]');
     var activeResolve = null;
 
+    /*
+     * DOCU: Closes the dialog (if open) and resolves the pending
+     * show() promise with the given result.
+     * @param {boolean} result - True if confirmed, false if cancelled/dismissed.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function settle(result) {
       if (dialog.open) dialog.close();
       if (activeResolve) {
@@ -131,6 +140,21 @@
       if (event.target === dialog) settle(false);
     });
 
+    /*
+     * DOCU: Populates and opens the confirmation dialog, returning a
+     * promise that resolves once the shopper confirms or cancels.
+     * @param {Object} [options] - Dialog copy overrides.
+     * @param {string} [options.title] - Dialog title text.
+     * @param {string} [options.message] - Dialog message text.
+     * @param {string} [options.cancelLabel] - Cancel button label.
+     * @param {string} [options.confirmLabel] - Confirm button label.
+     * @returns {Promise<boolean>} - Resolves true if confirmed, false
+     *   if cancelled/dismissed.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function show(options) {
       options = options || {};
       titleEl.textContent = options.title || 'Are you sure?';

@@ -648,10 +648,29 @@
 
     var subtotalEl = document.querySelector('[data-cart-subtotal]');
 
+    /*
+     * DOCU: Formats a cent amount as a Philippine peso display string.
+     * @param {number} cents - The amount in cents.
+     * @returns {string} - The formatted peso amount, e.g. "₱100.00".
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function moneyFormat(cents) {
       return '₱' + (cents / 100).toFixed(2);
     }
 
+    /*
+     * DOCU: Sends a line item quantity change to /cart/change.js.
+     * @param {number} line - The 1-based cart line number to change.
+     * @param {number} quantity - The new quantity for that line.
+     * @returns {Promise<Object>} - Resolves with the parsed cart JSON response.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function changeItem(line, quantity) {
       return fetch('/cart/change.js', {
         method: 'POST',
@@ -666,6 +685,14 @@
        about to buy" — falling back to the whole cart when nothing's
        checked, since that's the more useful default before a shopper has
        selected anything. */
+    /*
+     * DOCU: Recomputes and displays the cart subtotal from the checked
+     * items, falling back to the whole cart when nothing is checked.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function updateSubtotalDisplay() {
       const checked = document.querySelectorAll('[data-cart-item-checkbox]:checked');
       const lineEls =
@@ -683,6 +710,16 @@
       if (subtotalEl) subtotalEl.textContent = moneyFormat(total);
     }
 
+    /*
+     * DOCU: Syncs the on-page cart line prices, totals, and quantities
+     * from a fresh cart JSON response, updates the header count, and
+     * reloads the page if the cart is now empty.
+     * @param {Object} cart - The parsed /cart.js or /cart/change.js response.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function updateFromCart(cart) {
       if (window.BarakoCart) window.BarakoCart.updateHeaderCount(cart.item_count);
 
@@ -710,6 +747,17 @@
        a fast in-place update. There's no separate "Update" button — every
        quantity change (stepper click or typing a number directly) saves
        immediately. */
+    /*
+     * DOCU: Applies a quantity change for a cart line — removing the
+     * line and reloading if the quantity is zero (since removal
+     * renumbers subsequent lines), otherwise updating in place.
+     * @param {number} line - The 1-based cart line number to update.
+     * @param {number} quantity - The new quantity for that line.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function applyQuantity(line, quantity) {
       if (quantity === 0) {
         changeItem(line, 0).then(function () {
@@ -758,6 +806,17 @@
       });
     });
 
+    /*
+     * DOCU: Confirms with the shopper (via BarakoConfirm, if available)
+     * then removes a single cart line and reloads the page.
+     * @param {number} line - The 1-based cart line number to remove.
+     * @param {string} productTitle - The product title, used in the
+     *   confirmation message and removed-item toast.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function removeItemWithConfirm(line, productTitle) {
       var confirmTitle = form.getAttribute('data-remove-item-title');
       var confirmMessage = (form.getAttribute('data-remove-item-message') || '').replace('%%TITLE%%', productTitle);
@@ -811,6 +870,15 @@
     var selectedCountEl = document.querySelector('[data-cart-selected-count]');
     var selectedCountTemplate = selectedCountEl ? selectedCountEl.textContent.trim() : '';
 
+    /*
+     * DOCU: Updates the "Remove selected" button's visibility and the
+     * selected-count label based on how many item checkboxes are
+     * currently checked, and refreshes the subtotal display.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
     function refreshRemoveSelectedState() {
       const checkedCount = Array.prototype.filter.call(itemCheckboxes, function (checkbox) {
         return checkbox.checked;

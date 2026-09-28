@@ -483,6 +483,14 @@
      */
     const ratingInputs = document.querySelectorAll('[data-rating-filter-input]');
     if (ratingInputs.length > 0) {
+      /*
+       * DOCU: Shows/hides already-rendered product cards based on the
+       * currently checked rating filter radio.
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       const applyRatingFilter = () => {
         const checked = document.querySelector('[data-rating-filter-input]:checked');
         const threshold = checked ? parseFloat(checked.value) || 0 : 0;

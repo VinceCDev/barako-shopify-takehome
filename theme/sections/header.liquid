@@ -608,6 +608,14 @@
     const navBackdrop = document.querySelector('[data-nav-backdrop]');
     const navClose = document.querySelector('[data-nav-close]');
     if (navToggle) {
+      /*
+       * DOCU: Closes the mobile nav sidebar by removing the toggle
+       * <details> element's open attribute.
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       const closeNav = () => {
         navToggle.removeAttribute('open');
       };
@@ -635,6 +643,14 @@
     const demoLogoutButton = document.querySelector('[data-demo-logout]');
 
     if (guestLinksEls.length > 0 || demoAccountMenu) {
+      /*
+       * DOCU: Reads whether the demo login flag is currently set.
+       * @returns {boolean} - True when the sessionStorage flag is "true".
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       const isDemoLoggedIn = () => {
         try {
           return sessionStorage.getItem(DEMO_LOGIN_KEY) === 'true';
@@ -643,6 +659,14 @@
         }
       };
 
+      /*
+       * DOCU: Persists the demo login flag in sessionStorage.
+       * @param {boolean} value - Whether the demo session should be logged in.
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       const setDemoLoggedIn = (value) => {
         try {
           sessionStorage.setItem(DEMO_LOGIN_KEY, value ? 'true' : 'false');
@@ -651,6 +675,14 @@
         }
       };
 
+      /*
+       * DOCU: Applies the demo logged-in/out state to the header's
+       * guest links, account menu, and cart icon.
+       *
+       * Last Updated: 2026-09-28
+       * Author: Vince Allen
+       * Last Updated By: Vince Allen
+       */
       const applyDemoState = () => {
         const loggedIn = isDemoLoggedIn();
         guestLinksEls.forEach((el) => {
