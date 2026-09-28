@@ -1,0 +1,61 @@
+{% comment %}
+  Login page. The "forgot password" form lives in the same page behind a
+  <details> disclosure — no JS needed to reveal it, and no separate
+  template exists for just the recovery request in classic accounts.
+{% endcomment %}
+
+<div class="account-form-page wrap">
+  <div class="account-form-page__inner">
+    <h1 class="account-form-page__title">{{ 'customers.login.title' | t }}</h1>
+
+    {% form 'customer_login' %}
+      {% if form.errors %}
+        <p class="account-form-page__error" role="alert">
+          {{ 'customers.login.wrong_credentials' | t }}
+        </p>
+      {% endif %}
+
+      <div class="account-form-page__field">
+        <label for="CustomerEmail">{{ 'customers.login.email' | t }}</label>
+        <input type="email" id="CustomerEmail" name="customer[email]" autocomplete="email" autocorrect="off" autocapitalize="off" required>
+      </div>
+
+      <div class="account-form-page__field">
+        <label for="CustomerPassword">{{ 'customers.login.password' | t }}</label>
+        <input type="password" id="CustomerPassword" name="customer[password]" autocomplete="current-password" required>
+      </div>
+
+      <button type="submit" class="button account-form-page__submit">{{ 'customers.login.submit' | t }}</button>
+    {% endform %}
+
+    <details class="account-form-page__recover">
+      <summary class="text-link">{{ 'customers.login.forgot_password' | t }}</summary>
+      <div class="account-form-page__recover-panel">
+        {% form 'recover_customer_password' %}
+          {% if form.posted_successfully? %}
+            <p class="account-form-page__success" role="status">
+              {{ 'customers.reset_password.subtext' | t }}
+            </p>
+          {% endif %}
+          <div class="account-form-page__field">
+            <label for="RecoverEmail">{{ 'customers.reset_password.email' | t }}</label>
+            <input type="email" id="RecoverEmail" name="email" autocomplete="email" required>
+          </div>
+          <button type="submit" class="button">{{ 'customers.reset_password.submit' | t }}</button>
+        {% endform %}
+      </div>
+    </details>
+
+    <p class="account-form-page__switch">
+      {{ 'customers.login.no_account' | t }}
+      <a href="{{ routes.account_register_url }}" class="text-link">{{ 'customers.login.create_account' | t }}</a>
+    </p>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "t:general.main_login",
+  "settings": []
+}
+{% endschema %}

@@ -1,7 +1,16 @@
 <header class="header{% if template == 'index' %} header--transparent{% endif %}">
   <div class="header__row wrap">
     <p class="header__title">
-      {{ shop.name | link_to: routes.root_url }}
+      <a href="{{ routes.root_url }}">
+        {% liquid
+          assign logo_url = section.settings.logo | image_url: width: 200
+          unless section.settings.logo
+            assign logo_url = 'logo.png' | asset_url
+          endunless
+        %}
+        <img src="{{ logo_url }}" alt="{{ shop.name }}" class="header__logo" width="36" height="36">
+        <span class="header__title-text">{{ shop.name }}</span>
+      </a>
     </p>
 
     <details class="header__nav-toggle">
@@ -13,18 +22,50 @@
 
     <nav class="header__menu" aria-label="{{ 'general.menu' | t }}">
       {% for link in section.settings.menu.links %}
-        {{ link.title | link_to: link.url }}
+        <a
+          href="{{ link.url }}"
+          class="header__menu-link"
+          {% if link.active %}aria-current="page"{% endif %}
+        >
+          {{ link.title }}
+        </a>
       {% endfor %}
     </nav>
 
     <div class="header__icons">
       {% if shop.customer_accounts_enabled %}
-        <shopify-account
-          class="header__icon-link"
-          menu="{{ section.settings.customer_account_menu }}"
-        >
-          {% render 'icon', name: 'account' %}
-        </shopify-account>
+        {% if customer %}
+          <details class="header__account-menu">
+            <summary class="header__icon-link" aria-label="{{ 'customers.account.title' | t }}">
+              {% render 'icon', name: 'account' %}
+            </summary>
+            <div class="header__account-panel">
+              <a href="/pages/profile" class="header__account-link">
+                {{ 'customers.account.view_profile' | t }}
+              </a>
+              <a
+                href="{{ routes.account_logout_url }}"
+                class="header__account-link"
+                data-logout-trigger
+                data-confirm-title="{{ 'customers.account.logout_confirm_title' | t }}"
+                data-confirm-message="{{ 'customers.account.logout_confirm_message' | t }}"
+                data-confirm-action="{{ 'customers.account.logout_confirm_action' | t }}"
+                data-cancel-label="{{ 'cart.cancel' | t }}"
+              >
+                {{ 'customers.account.logout' | t }}
+              </a>
+            </div>
+          </details>
+        {% else %}
+          <div class="header__auth-links">
+            <a href="{{ routes.account_login_url }}" class="header__auth-link">
+              {{ 'customers.login.title' | t }}
+            </a>
+            <a href="{{ routes.account_register_url }}" class="header__auth-link header__auth-link--primary">
+              {{ 'customers.register.title' | t }}
+            </a>
+          </div>
+        {% endif %}
       {% endif %}
 
       <a href="{{ routes.cart_url }}" class="header__icon-link header__cart-link">
@@ -32,9 +73,15 @@
         <span class="visually-hidden">
           {{ 'cart.title' | t }}, {{ 'cart.item_count' | t: count: cart.item_count }}
         </span>
-        {% if cart.item_count > 0 %}
-          <span class="header__cart-count" aria-hidden="true">({{ cart.item_count }})</span>
-        {% endif %}
+        <span
+          class="header__cart-badge"
+          data-cart-badge
+          data-count="{{ cart.item_count }}"
+          aria-hidden="true"
+          {% if cart.item_count == 0 %}hidden{% endif %}
+        >
+          {{ cart.item_count }}
+        </span>
       </a>
     </div>
   </div>
@@ -83,8 +130,19 @@
   }
 
   .header__title a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
     color: inherit;
     text-decoration: none;
+  }
+
+  .header__logo {
+    width: 2.25rem;
+    height: 2.25rem;
+    max-width: none;
+    border-radius: 50%;
+    object-fit: cover;
   }
 
   /* Mobile nav toggle */
@@ -135,11 +193,19 @@
     display: flex;
   }
 
-  .header__menu a {
+  .header__menu-link {
+    display: inline-flex;
     color: inherit;
     text-decoration: none;
-    padding-block: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
     font-size: var(--font-size-md);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+  .header__menu-link:hover,
+  .header__menu-link[aria-current='page'] {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
   }
 
   .header__icons {
@@ -147,6 +213,70 @@
     align-items: center;
     gap: var(--space-3);
     order: 2;
+  }
+
+  /* Account dropdown: same disclosure pattern as the mobile nav. */
+  .header__account-menu {
+    position: relative;
+  }
+  .header__account-menu summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .header__account-menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .header__account-panel {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    width: 11rem;
+    padding: var(--space-2);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+  }
+  .header__account-link {
+    padding: var(--space-3) var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+  }
+  .header__account-link:hover {
+    background-color: var(--color-surface);
+  }
+
+  /* Logged out: text buttons in place of the account icon, since there's
+     no account to open a dropdown for yet. */
+  .header__auth-links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .header__auth-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-sm);
+    color: inherit;
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+  }
+  .header__auth-link:hover {
+    background-color: var(--color-surface);
+  }
+  .header__auth-link--primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .header__auth-link--primary:hover {
+    background-color: var(--color-primary-hover);
   }
 
   /* 44x44 minimum tap target: the icon glyph stays small and visually
@@ -165,12 +295,30 @@
     width: 1.375rem;
   }
   .header__cart-link {
+    position: relative;
     padding-inline-end: var(--space-2);
   }
 
-  .header__cart-count {
-    font-size: var(--font-size-xs);
-    letter-spacing: var(--tracking-label);
+  /* Notification-style badge: a small filled dot pinned to the icon's
+     corner, showing only unseen items (see cart-utils.js) rather than the
+     running cart total — it clears once the cart page has been visited. */
+  .header__cart-badge {
+    position: absolute;
+    top: 0.25rem;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
   }
 
   @media (min-width: 750px) {
@@ -183,25 +331,18 @@
       position: static;
       flex-direction: row;
       align-items: center;
-      gap: var(--space-6);
+      gap: var(--space-2);
       padding: 0;
       background-color: transparent;
       border-bottom: none;
       color: inherit;
     }
-    .header__menu a {
-      display: inline-flex;
+    .header__menu-link {
       align-items: center;
       min-height: 2.75rem;
-      margin-block: calc((2.75rem - 1.6em) / -2);
-      padding-block: 0;
       font-size: var(--font-size-xs);
       text-transform: uppercase;
       letter-spacing: var(--tracking-label);
-      text-underline-offset: 0.2em;
-    }
-    .header__menu a:hover {
-      text-decoration: underline;
     }
     .header__icons {
       order: 3;
@@ -210,21 +351,41 @@
   }
 {% endstylesheet %}
 
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    const logoutLink = document.querySelector('[data-logout-trigger]');
+    if (!logoutLink || !window.BarakoConfirm) return;
+
+    logoutLink.addEventListener('click', function (event) {
+      event.preventDefault();
+      window.BarakoConfirm
+        .show({
+          title: logoutLink.getAttribute('data-confirm-title'),
+          message: logoutLink.getAttribute('data-confirm-message'),
+          confirmLabel: logoutLink.getAttribute('data-confirm-action'),
+          cancelLabel: logoutLink.getAttribute('data-cancel-label'),
+        })
+        .then(function (confirmed) {
+          if (confirmed) window.location.href = logoutLink.href;
+        });
+    });
+  });
+{% endjavascript %}
+
 {% schema %}
 {
   "name": "t:general.header",
   "settings": [
     {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "t:labels.logo"
+    },
+    {
       "type": "link_list",
       "id": "menu",
       "label": "t:labels.menu",
       "default": "main-menu"
-    },
-    {
-      "type": "link_list",
-      "id": "customer_account_menu",
-      "label": "t:labels.customer_account_menu",
-      "default": "customer-account-main-menu"
     }
   ]
 }

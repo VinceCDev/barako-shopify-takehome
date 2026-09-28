@@ -1,0 +1,85 @@
+{% comment %}
+  "You might also like". Server-renders a same-collection fallback by
+  default (so it works fully without JS); JS then requests this exact
+  section again through Shopify's recommendations endpoint and swaps in
+  the smarter, algorithm-picked set if one comes back.
+{% endcomment %}
+
+{% liquid
+  assign display_products = blank
+  if recommendations.performed and recommendations.products.size > 0
+    assign display_products = recommendations.products
+  else
+    assign fallback_collection = product.collections.first
+    if fallback_collection != blank
+      assign display_products = fallback_collection.products
+    endif
+  endif
+%}
+
+{% if display_products.size > 0 %}
+  <section class="product-recommendations wrap" id="ProductRecommendations" data-product-id="{{ product.id }}">
+    <h2 class="product-recommendations__heading">{{ 'products.product.you_might_also_like' | t }}</h2>
+    <div class="product-recommendations__grid">
+      {% assign shown = 0 %}
+      {% for rec_product in display_products %}
+        {% if rec_product.id != product.id and shown < 4 %}
+          {% render 'product-card', product: rec_product, image_sizes: '(min-width: 64rem) 25vw, 50vw' %}
+          {% assign shown = shown | plus: 1 %}
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+{% stylesheet %}
+  .product-recommendations {
+    padding-block: var(--section-padding);
+  }
+  .product-recommendations__heading {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-8);
+  }
+  .product-recommendations__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6) var(--space-5);
+  }
+  @media (min-width: 48rem) {
+    .product-recommendations__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    var container = document.getElementById('ProductRecommendations');
+    if (!container) return;
+
+    var productId = container.getAttribute('data-product-id');
+    var url = '/recommendations/products?section_id=product-recommendations&product_id=' + productId + '&limit=4&intent=related';
+
+    fetch(url)
+      .then(function (response) {
+        return response.text();
+      })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var newSection = doc.getElementById('ProductRecommendations');
+        if (newSection && newSection.querySelector('.product-recommendations__grid')) {
+          container.replaceWith(newSection);
+        }
+      })
+      .catch(function () {
+        /* Keep the server-rendered same-collection fallback already shown. */
+      });
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.product_recommendations",
+  "settings": []
+}
+{% endschema %}

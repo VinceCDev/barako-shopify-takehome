@@ -1,0 +1,406 @@
+{% comment %}
+  Product reviews: the aggregate rating already stored on the product
+  metafield (same source as the product card's star badge), plus a
+  client-side-only review list and submission form — no backend, so
+  reviews are kept in localStorage per product, same pattern as
+  assets/favorites.js. Requires JS to do anything meaningful; without it,
+  shoppers see the existing aggregate rating but not the write-a-review
+  form, per the noscript fallback below.
+{% endcomment %}
+
+{% liquid
+  assign rating_value = product.metafields.custom.rating.value
+  assign rating_count = product.metafields.custom.rating_count.value
+%}
+
+<div class="product-reviews wrap" data-product-reviews data-product-id="{{ product.id }}">
+  <div class="product-reviews__header">
+    <h2 class="product-reviews__heading">{{ 'products.reviews.heading' | t }}</h2>
+    {% if rating_value != blank %}
+      <div class="product-reviews__summary" role="img" aria-label="{{ 'products.product.rating_label' | t: rating: rating_value, max: 5 }}">
+        <span class="product-reviews__stars" aria-hidden="true">
+          {% assign rating_rounded = rating_value | round %}
+          {% for i in (1..5) %}
+            <span class="product-reviews__star{% if i <= rating_rounded %} product-reviews__star--filled{% endif %}">
+              {% render 'icon', name: 'star' %}
+            </span>
+          {% endfor %}
+        </span>
+        <span class="product-reviews__summary-text">
+          {{ rating_value }}{% if rating_count != blank %} ({{ 'products.reviews.count' | t: count: rating_count }}){% endif %}
+        </span>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="product-reviews__layout">
+    <div class="product-reviews__list-wrap">
+      <ul class="product-reviews__list" data-reviews-list></ul>
+      <p class="product-reviews__empty" data-reviews-empty hidden>{{ 'products.reviews.empty' | t }}</p>
+    </div>
+
+    <div class="product-reviews__form-wrap js-only">
+      <h3 class="product-reviews__form-title">{{ 'products.reviews.form_title' | t }}</h3>
+      <form
+        class="product-reviews__form"
+        data-review-form
+        data-thanks-title="{{ 'products.reviews.thanks_title' | t }}"
+        data-thanks-text="{{ 'products.reviews.thanks_text' | t }}"
+      >
+        <div class="product-reviews__field">
+          <label for="ReviewName">{{ 'products.reviews.name' | t }}</label>
+          <input type="text" id="ReviewName" name="name" required maxlength="60">
+        </div>
+
+        <div class="product-reviews__field">
+          <span class="product-reviews__field-label">{{ 'products.reviews.rating' | t }}</span>
+          <div class="product-reviews__rating-picker" data-rating-picker>
+            {% for i in (1..5) %}
+              <label class="product-reviews__rating-star" data-rating-star="{{ i }}">
+                <input type="radio" name="rating" value="{{ i }}" {% if i == 5 %}checked{% endif %} required>
+                {% render 'icon', name: 'star' %}
+                <span class="visually-hidden">{{ 'products.reviews.rating_value' | t: rating: i }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="product-reviews__field">
+          <label for="ReviewComment">{{ 'products.reviews.comment' | t }}</label>
+          <textarea id="ReviewComment" name="comment" rows="4" required maxlength="500"></textarea>
+        </div>
+
+        <button type="submit" class="button">{{ 'products.reviews.submit' | t }}</button>
+      </form>
+    </div>
+
+    <noscript>
+      <p class="product-reviews__noscript">{{ 'products.reviews.noscript' | t }}</p>
+    </noscript>
+  </div>
+</div>
+
+{% stylesheet %}
+  .product-reviews {
+    padding-block: var(--section-padding);
+  }
+  .product-reviews__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .product-reviews__heading {
+    font-size: var(--font-size-2xl);
+  }
+  .product-reviews__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .product-reviews__stars {
+    display: flex;
+    gap: 0.125rem;
+  }
+  .product-reviews__star {
+    display: inline-flex;
+    color: var(--color-border);
+  }
+  .product-reviews__star svg {
+    width: 1rem;
+  }
+  .product-reviews__star--filled {
+    color: var(--color-primary);
+  }
+  .product-reviews__star--filled svg {
+    fill: var(--color-primary);
+  }
+  .product-reviews__summary-text {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .product-reviews__layout {
+    margin-top: var(--space-6);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  @media (min-width: 56rem) {
+    .product-reviews__layout {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: start;
+    }
+    /* Without JS the form stays hidden (.js-only) — let the list and the
+       noscript notice use the full width rather than leaving an empty
+       second column. */
+    .no-js .product-reviews__list-wrap,
+    .no-js .product-reviews__noscript {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .product-reviews__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .product-reviews__item {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .product-reviews__item-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .product-reviews__item-name {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+  }
+  .product-reviews__item-date {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+  .product-reviews__item-stars {
+    display: flex;
+    gap: 0.125rem;
+    margin-top: var(--space-2);
+  }
+  .product-reviews__item-stars svg {
+    width: 0.875rem;
+  }
+  .product-reviews__item-comment {
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .product-reviews__empty {
+    padding: var(--space-5);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .product-reviews__form-wrap {
+    padding: var(--space-5);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+  .product-reviews__form-title {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-4);
+  }
+  .product-reviews__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .product-reviews__field label,
+  .product-reviews__field-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+  .product-reviews__field input,
+  .product-reviews__field textarea {
+    width: 100%;
+  }
+
+  .product-reviews__rating-picker {
+    display: flex;
+    gap: var(--space-1);
+  }
+  .product-reviews__rating-star {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+  .product-reviews__rating-star input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .product-reviews__rating-star svg {
+    width: 1.5rem;
+    color: var(--color-border);
+    transition: color 100ms ease;
+  }
+  .product-reviews__rating-star.is-active svg {
+    color: var(--color-primary);
+    fill: var(--color-primary);
+  }
+  .product-reviews__rating-star input:focus-visible ~ svg {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .product-reviews__noscript {
+    padding: var(--space-5);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    var root = document.querySelector('[data-product-reviews]');
+    if (!root) return;
+
+    var productId = root.getAttribute('data-product-id');
+    var storageKey = 'barako:reviews:' + productId;
+    var listEl = root.querySelector('[data-reviews-list]');
+    var emptyEl = root.querySelector('[data-reviews-empty]');
+    var form = root.querySelector('[data-review-form]');
+
+    function readReviews() {
+      try {
+        var raw = window.localStorage.getItem(storageKey);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeReviews(reviews) {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify(reviews));
+      } catch (e) {
+        // Storage unavailable — the review still renders for this page view.
+      }
+    }
+
+    function starSvg() {
+      var template = root.querySelector('.product-reviews__star svg, .product-reviews__rating-star svg');
+      return template ? template.outerHTML : '';
+    }
+
+    function renderReview(review) {
+      var li = document.createElement('li');
+      li.className = 'product-reviews__item';
+
+      var head = document.createElement('div');
+      head.className = 'product-reviews__item-head';
+
+      var nameEl = document.createElement('span');
+      nameEl.className = 'product-reviews__item-name';
+      nameEl.textContent = review.name;
+
+      var dateEl = document.createElement('span');
+      dateEl.className = 'product-reviews__item-date';
+      dateEl.textContent = review.date;
+
+      head.appendChild(nameEl);
+      head.appendChild(dateEl);
+
+      var stars = document.createElement('div');
+      stars.className = 'product-reviews__item-stars';
+      var svg = starSvg();
+      for (var i = 1; i <= 5; i++) {
+        var starWrap = document.createElement('span');
+        starWrap.style.color = i <= review.rating ? 'var(--color-primary)' : 'var(--color-border)';
+        starWrap.innerHTML = svg;
+        var starPath = starWrap.querySelector('svg');
+        if (starPath && i <= review.rating) starPath.style.fill = 'var(--color-primary)';
+        stars.appendChild(starWrap);
+      }
+
+      var comment = document.createElement('p');
+      comment.className = 'product-reviews__item-comment';
+      comment.textContent = review.comment;
+
+      li.appendChild(head);
+      li.appendChild(stars);
+      li.appendChild(comment);
+      return li;
+    }
+
+    function renderAll() {
+      var reviews = readReviews();
+      listEl.innerHTML = '';
+      reviews.forEach(function (review) {
+        listEl.appendChild(renderReview(review));
+      });
+      if (emptyEl) emptyEl.hidden = reviews.length > 0;
+    }
+
+    renderAll();
+
+    var ratingPicker = root.querySelector('[data-rating-picker]');
+    if (ratingPicker) {
+      var starLabels = ratingPicker.querySelectorAll('[data-rating-star]');
+      var highlight = function (value) {
+        starLabels.forEach(function (label) {
+          label.classList.toggle('is-active', parseInt(label.getAttribute('data-rating-star'), 10) <= value);
+        });
+      };
+      var checkedInput = ratingPicker.querySelector('input:checked');
+      highlight(checkedInput ? parseInt(checkedInput.value, 10) : 0);
+
+      starLabels.forEach(function (label) {
+        var value = parseInt(label.getAttribute('data-rating-star'), 10);
+        label.addEventListener('mouseenter', function () {
+          highlight(value);
+        });
+        label.querySelector('input').addEventListener('change', function () {
+          highlight(value);
+        });
+      });
+      ratingPicker.addEventListener('mouseleave', function () {
+        var current = ratingPicker.querySelector('input:checked');
+        highlight(current ? parseInt(current.value, 10) : 0);
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var formData = new FormData(form);
+        var review = {
+          name: (formData.get('name') || '').toString().trim(),
+          rating: parseInt(formData.get('rating'), 10) || 5,
+          comment: (formData.get('comment') || '').toString().trim(),
+          date: new Date().toLocaleDateString(),
+        };
+        if (!review.name || !review.comment) return;
+
+        var reviews = readReviews();
+        reviews.unshift(review);
+        writeReviews(reviews);
+        renderAll();
+        form.reset();
+
+        if (window.BarakoToast) {
+          window.BarakoToast.show(form.getAttribute('data-thanks-text') || 'Thanks for your review!', {
+            title: form.getAttribute('data-thanks-title'),
+          });
+        }
+      });
+    }
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.product_reviews",
+  "settings": [],
+  "presets": [
+    {
+      "name": "t:general.product_reviews"
+    }
+  ]
+}
+{% endschema %}

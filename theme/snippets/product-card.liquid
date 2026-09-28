@@ -1,0 +1,427 @@
+{% doc %}
+  Editorial product card: 4:5 image (crossfades to a second product image
+  on hover, if one exists), title, price (handles compare-at and sold
+  out), and a plain-text roast/flavor meta line. The whole card is one
+  "stretched link" — only the title is a real <a>, expanded to cover the
+  card via ::after, which keeps the link's accessible name to just the
+  title instead of reading out the price and meta line too.
+
+  @param {product} product
+  @param {string} [heading_level] - defaults to 'h3'; pass 'h2' if the
+    card grid is the first heading level under the page's own h1.
+  @param {string} [image_sizes] - sizes attribute for the card image
+
+  @example
+  {% render 'product-card', product: product %}
+{% enddoc %}
+
+{% liquid
+  assign heading_level = heading_level | default: 'h3'
+  assign primary_image = product.featured_image
+  assign secondary_image = product.images[1]
+
+  assign roast_level = product.metafields.custom.roast_level.value
+  assign flavor_notes_raw = product.metafields.custom.flavor_notes.value
+  assign flavor_notes_top = ''
+  if flavor_notes_raw != blank
+    assign flavor_note_list = flavor_notes_raw | split: ','
+    for note in flavor_note_list limit: 2
+      assign trimmed_note = note | strip
+      if forloop.first
+        assign flavor_notes_top = trimmed_note
+      else
+        assign flavor_notes_top = flavor_notes_top | append: ', ' | append: trimmed_note
+      endif
+    endfor
+  endif
+
+  assign meta_line = ''
+  if roast_level != blank
+    assign meta_line = roast_level | append: ' roast'
+  endif
+  if flavor_notes_top != blank
+    if meta_line != blank
+      assign meta_line = meta_line | append: ' &middot; ' | append: flavor_notes_top
+    else
+      assign meta_line = flavor_notes_top
+    endif
+  endif
+
+  assign is_on_sale = false
+  if product.compare_at_price > product.price
+    assign is_on_sale = true
+  endif
+
+  assign rating_value = product.metafields.custom.rating.value
+  assign rating_count = product.metafields.custom.rating_count.value
+  assign short_description = product.description | strip_html | truncatewords: 14
+
+  assign coffee_fallback_url = ''
+  if product.type == 'Coffee'
+    assign coffee_fallback_url = 'product-' | append: product.handle | append: '.jpg' | asset_url
+  endif
+%}
+
+<article class="product-card" data-product-title="{{ product.title | escape }}">
+  <div class="product-card__media" data-fallback-src="{{ coffee_fallback_url }}">
+    <button
+      type="button"
+      class="product-card__favorite"
+      data-favorite-toggle
+      data-product-id="{{ product.id }}"
+      data-add-label="{{ 'products.product.add_to_favorites' | t }}"
+      data-remove-label="{{ 'products.product.remove_from_favorites' | t }}"
+      data-added-toast-title="{{ 'products.product.added_to_favorites_toast_title' | t }}"
+      data-added-toast="{{ 'products.product.added_to_favorites_toast' | t: title: product.title }}"
+      data-removed-toast-title="{{ 'products.product.removed_from_favorites_toast_title' | t }}"
+      data-removed-toast="{{ 'products.product.removed_from_favorites_toast' | t: title: product.title }}"
+      aria-pressed="false"
+      aria-label="{{ 'products.product.add_to_favorites' | t }}"
+    >
+      {% render 'icon', name: 'heart' %}
+    </button>
+
+    {% liquid
+      assign quick_view_fallback_image = ''
+      if primary_image == blank and coffee_fallback_url != blank
+        assign quick_view_fallback_image = coffee_fallback_url
+      endif
+    %}
+    <button
+      type="button"
+      class="product-card__quick-view"
+      data-quick-view-trigger
+      data-product-url="{{ product.url }}.js"
+      data-fallback-image="{{ quick_view_fallback_image }}"
+      data-rating="{{ rating_value }}"
+      data-rating-count="{{ rating_count }}"
+      aria-label="{{ 'products.product.quick_view' | t: title: product.title }}"
+    >
+      {% render 'icon', name: 'eye' %}
+      <span>{{ 'products.product.quick_view_short' | t }}</span>
+    </button>
+
+    {% if primary_image %}
+      {% liquid
+        assign primary_focal = primary_image.presentation.focal_point | default: '50% 50%'
+        assign primary_style = 'object-position: ' | append: primary_focal
+        assign primary_alt = primary_image.alt | default: product.title
+        assign primary_tag = primary_image | image_url: width: 800 | image_tag: class: 'product-card__image product-card__image--primary', loading: 'lazy', sizes: image_sizes, widths: '300, 450, 600, 800', style: primary_style, alt: primary_alt
+      %}
+      {{ primary_tag }}
+      {% if secondary_image %}
+        {% liquid
+          assign secondary_focal = secondary_image.presentation.focal_point | default: '50% 50%'
+          assign secondary_style = 'object-position: ' | append: secondary_focal
+          assign secondary_tag = secondary_image | image_url: width: 800 | image_tag: class: 'product-card__image product-card__image--secondary', loading: 'lazy', sizes: image_sizes, widths: '300, 450, 600, 800', style: secondary_style, alt: ''
+        %}
+        {{ secondary_tag }}
+      {% endif %}
+    {% elsif product.type == 'Coffee' %}
+      {% comment %}
+        No merchant image picked yet: fall back to a bundled photo
+        matching this product's handle (assets/product-<handle>.jpg),
+        same pattern as the homepage's hero/origin/step fallbacks.
+      {% endcomment %}
+      <img
+        src="{{ 'product-' | append: product.handle | append: '.jpg' | asset_url }}"
+        alt=""
+        width="800"
+        height="1000"
+        class="product-card__image product-card__image--primary"
+        loading="lazy"
+      >
+    {% endif %}
+  </div>
+
+  <{{ heading_level }} class="product-card__title">
+    <a href="{{ product.url }}" class="product-card__link">{{ product.title }}</a>
+  </{{ heading_level }}>
+
+  {% if rating_value != blank %}
+    {% liquid
+      assign rating_rounded = rating_value | round
+    %}
+    <div class="product-card__rating" role="img" aria-label="{{ 'products.product.rating_label' | t: rating: rating_value, max: 5 }}">
+      <span class="product-card__rating-stars" aria-hidden="true">
+        {% for i in (1..5) %}
+          <span class="product-card__star{% if i <= rating_rounded %} product-card__star--filled{% endif %}">
+            {% render 'icon', name: 'star' %}
+          </span>
+        {% endfor %}
+      </span>
+      <span class="product-card__rating-value">
+        {{ rating_value }}{% if rating_count != blank %} ({{ rating_count }}){% endif %}
+      </span>
+    </div>
+  {% endif %}
+
+  {% if meta_line != blank %}
+    <p class="product-card__meta">{{ meta_line }}</p>
+  {% endif %}
+
+  {% if short_description != blank %}
+    <p class="product-card__description-preview">{{ short_description }}</p>
+    <details class="product-card__read-more">
+      <summary>{{ 'products.product.read_more' | t }}</summary>
+      <p class="product-card__description">{{ product.description | strip_html }}</p>
+    </details>
+  {% endif %}
+
+  <p class="product-card__price">
+    {% if product.available == false %}
+      <span class="product-card__sold-out">{{ 'products.product.sold_out' | t }}</span>
+    {% elsif is_on_sale %}
+      <span class="product-card__price-compare">{{ product.compare_at_price | money }}</span>
+      <span class="product-card__price-sale">{{ product.price | money }}</span>
+    {% elsif product.price_varies %}
+      {{ 'products.product.from_price_html' | t: price: product.price | money }}
+    {% else %}
+      {{ product.price | money }}
+    {% endif %}
+  </p>
+</article>
+
+{% stylesheet %}
+  .product-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .product-card__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  /* Darkening overlay on hover, above the images but below the
+     favorite/quick-view buttons (z-index: 2), so it reads as a scrim
+     behind them rather than blocking them. */
+  .product-card__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background-color: #000;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    pointer-events: none;
+  }
+  .product-card:hover .product-card__media::after {
+    opacity: 0.22;
+  }
+
+  .product-card__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+  .product-card__image--primary {
+    transition: opacity var(--transition-fast);
+  }
+  .product-card__image--secondary {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+  }
+  .product-card:hover .product-card__image--primary {
+    opacity: 0;
+  }
+  .product-card:hover .product-card__image--secondary {
+    opacity: 1;
+  }
+
+  .product-card__title {
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+  }
+  .product-card__link {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  /* Stretched link: only the title text is a real <a>, but its clickable
+     area covers the whole card, so the link's accessible name stays just
+     the product title instead of also reading out price and meta text.
+     Explicit z-index so the favorite button (also absolutely positioned,
+     over the image) reliably sits above it and stays clickable. */
+  .product-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .product-card:hover .product-card__link {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .product-card__favorite {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    background-color: color-mix(in srgb, var(--color-paper) 85%, transparent);
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .product-card__favorite svg {
+    width: 1.125rem;
+  }
+  .product-card__favorite[aria-pressed='true'] svg {
+    fill: var(--color-primary);
+    stroke: var(--color-primary);
+  }
+
+  .product-card__quick-view {
+    position: absolute;
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: var(--space-2);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding-inline: var(--space-3);
+    background-color: var(--color-paper);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+  }
+  .product-card__quick-view svg {
+    width: 1rem;
+  }
+  .product-card:hover .product-card__quick-view,
+  .product-card__quick-view:focus-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (hover: none) {
+    /* No hover on touch — keep it visible rather than unreachable. */
+    .product-card__quick-view {
+      opacity: 1;
+      transform: translateY(0);
+      position: static;
+      margin-top: var(--space-2);
+    }
+  }
+
+  .product-card__rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .product-card__rating-stars {
+    display: flex;
+    gap: 0.125rem;
+  }
+  .product-card__star {
+    display: inline-flex;
+    color: var(--color-border);
+  }
+  .product-card__star svg {
+    width: 0.875rem;
+  }
+  .product-card__star--filled {
+    color: var(--color-primary);
+  }
+  .product-card__star--filled svg {
+    fill: var(--color-primary);
+  }
+  .product-card__rating-value {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  .product-card__meta {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+
+  .product-card__description-preview {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+  .product-card__read-more summary {
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+    list-style: none;
+  }
+  .product-card__read-more summary::-webkit-details-marker {
+    display: none;
+  }
+  .product-card__description {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .product-card__price {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+  .product-card__price-compare {
+    text-decoration: line-through;
+    margin-right: var(--space-2);
+  }
+  .product-card__price-sale {
+    color: var(--color-primary);
+  }
+  .product-card__sold-out {
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    font-size: var(--font-size-xs);
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  /* A merchant-uploaded featured image can go missing (deleted asset,
+     broken CDN reference) and just render blank, leaving the plain
+     --color-surface placeholder behind it — which, under the hover
+     scrim, reads as a flat gray box instead of a darkened photo. If that
+     happens, fall back to the same bundled photo the card would have
+     shown had no image been picked at all. 'error' doesn't bubble, so
+     this listens on the capture phase instead. */
+  document.addEventListener(
+    'error',
+    function (event) {
+      const img = event.target.closest && event.target.closest('.product-card__image--primary');
+      if (!img) return;
+
+      const media = img.closest('[data-fallback-src]');
+      const fallbackSrc = media ? media.getAttribute('data-fallback-src') : '';
+      if (!fallbackSrc || img.src === fallbackSrc) return;
+
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+      img.src = fallbackSrc;
+    },
+    true
+  );
+{% endjavascript %}

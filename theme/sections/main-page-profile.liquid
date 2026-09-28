@@ -1,0 +1,232 @@
+{% comment %}
+  Custom, read-only profile page — not the reserved /account route, since
+  this store's "New customer accounts" setting hijacks that route to
+  Shopify's own hosted UI regardless of theme templates. This page just
+  shows the logged-in customer's info and order history; editing is
+  explained via a modal rather than a real form, since Shopify keeps
+  account-editing behind its own hosted flow now.
+{% endcomment %}
+
+<div class="account-form-page account-form-page--wide wrap">
+  <div class="account-form-page__inner">
+    {% if customer %}
+      <div class="account-dashboard__header">
+        <h1 class="account-form-page__title">{{ 'customers.account.profile_title' | t }}</h1>
+        <button type="button" class="text-link" data-edit-profile-trigger>
+          {{ 'customers.account.edit_profile' | t }}
+        </button>
+      </div>
+
+      <div class="account-profile__details">
+        <div class="account-profile__field">
+          <span class="account-profile__label">{{ 'customers.account.name' | t }}</span>
+          <p class="account-profile__value">
+            {% if customer.name != blank %}
+              {{ customer.name }}
+            {% else %}
+              {{ 'customers.account.no_name' | t }}
+            {% endif %}
+          </p>
+        </div>
+        <div class="account-profile__field">
+          <span class="account-profile__label">{{ 'customers.account.email' | t }}</span>
+          <p class="account-profile__value">{{ customer.email }}</p>
+        </div>
+        {% if customer.default_address %}
+          <div class="account-profile__field">
+            <span class="account-profile__label">{{ 'customers.account.address' | t }}</span>
+            <p class="account-profile__value">{{ customer.default_address | format_address }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <h2 class="account-dashboard__subheading">{{ 'customers.account.orders_title' | t }}</h2>
+
+      {% if customer.orders.size > 0 %}
+        <ul class="account-orders">
+          {% for order in customer.orders %}
+            <li class="account-orders__item">
+              <div class="account-orders__meta">
+                <p class="account-orders__number">{{ 'customers.account.order_number' | t: number: order.name }}</p>
+                <p class="account-orders__date">{{ 'customers.account.order_date' | t: date: order.created_at | date: '%B %d, %Y' }}</p>
+              </div>
+              <div class="account-orders__end">
+                <div class="account-orders__status">
+                  <span class="account-orders__status-label">{{ 'customers.account.order_status' | t }}</span>
+                  <span>{{ order.fulfillment_status_label }}</span>
+                </div>
+                <p class="account-orders__total">{{ order.total_price | money }}</p>
+                <a href="{{ order.customer_url }}" class="text-link">{{ 'customers.account.view_order' | t }}</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="account-dashboard__empty">{{ 'customers.account.no_orders' | t }}</p>
+      {% endif %}
+
+      <dialog class="edit-profile-dialog" data-edit-profile-dialog>
+        <h2 class="edit-profile-dialog__title">{{ 'customers.account.edit_profile_dialog_title' | t }}</h2>
+        <p class="edit-profile-dialog__message">{{ 'customers.account.edit_profile_dialog_message' | t }}</p>
+        <button type="button" class="button edit-profile-dialog__close" data-edit-profile-close>
+          {{ 'customers.account.edit_profile_dialog_dismiss' | t }}
+        </button>
+      </dialog>
+    {% else %}
+      <p class="account-dashboard__empty">
+        <a href="{{ routes.account_login_url }}">{{ 'customers.account.please_sign_in' | t }}</a>
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+{% stylesheet %}
+  .account-dashboard__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .account-dashboard__header .account-form-page__title {
+    margin-bottom: 0;
+    text-align: left;
+  }
+
+  .account-profile__details {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+  .account-profile__label {
+    display: block;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  .account-profile__value {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-md);
+  }
+
+  .account-dashboard__subheading {
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-5);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+
+  .account-dashboard__empty {
+    color: var(--color-text-muted);
+  }
+
+  .account-orders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .account-orders__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+  .account-orders__item:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  .account-orders__number {
+    font-weight: 600;
+  }
+  .account-orders__date {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+  .account-orders__end {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+  }
+  .account-orders__status {
+    text-align: right;
+    font-size: var(--font-size-sm);
+  }
+  .account-orders__status-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  .account-orders__total {
+    font-weight: 600;
+  }
+
+  .edit-profile-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: var(--space-6);
+    border: none;
+    border-radius: var(--radius-md);
+    width: min(90vw, 26rem);
+    text-align: center;
+    background-color: var(--color-background);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+  }
+  .edit-profile-dialog::backdrop {
+    background-color: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  }
+  .edit-profile-dialog__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+  .edit-profile-dialog__message {
+    margin-top: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+  .edit-profile-dialog__close {
+    margin-top: var(--space-6);
+    width: 100%;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    const trigger = document.querySelector('[data-edit-profile-trigger]');
+    const dialog = document.querySelector('[data-edit-profile-dialog]');
+    const closeButton = document.querySelector('[data-edit-profile-close]');
+    if (!trigger || !dialog || !closeButton) return;
+
+    trigger.addEventListener('click', function () {
+      dialog.showModal();
+    });
+    closeButton.addEventListener('click', function () {
+      dialog.close();
+    });
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) dialog.close();
+    });
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.main_page_profile",
+  "settings": []
+}
+{% endschema %}

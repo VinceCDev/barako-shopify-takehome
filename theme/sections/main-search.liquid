@@ -1,0 +1,129 @@
+{% comment %}
+  Search results: product cards only (the search forms across the site
+  already scope to type=product), same component used everywhere else.
+{% endcomment %}
+
+<div class="search-results-page wrap">
+  <h1 class="search-results-page__title">{{ 'search.title' | t }}</h1>
+
+  <form action="{{ routes.search_url }}" method="get" role="search" class="search-results-page__form">
+    <input type="hidden" name="type" value="product">
+    <label for="SearchPageInput" class="visually-hidden">{{ 'search.placeholder' | t }}</label>
+    <input
+      type="search"
+      name="q"
+      id="SearchPageInput"
+      value="{{ search.terms | escape }}"
+      placeholder="{{ 'search.placeholder' | t }}"
+      class="search-results-page__input"
+    >
+    <button type="submit" class="button">{{ 'search.submit' | t }}</button>
+  </form>
+
+  {% if search.performed %}
+    <p class="search-results-page__summary">
+      {% if search.results_count == 0 %}
+        {{ 'search.no_results_html' | t: terms: search.terms }}
+      {% else %}
+        {{ 'search.results_for_html' | t: terms: search.terms, count: search.results_count }}
+      {% endif %}
+    </p>
+
+    {% if search.results_count > 0 %}
+      {% paginate search.results by 24 %}
+        <div class="search-results-page__grid">
+          {% for item in search.results %}
+            {% if item.object_type == 'product' %}
+              {% render 'product-card',
+                product: item,
+                image_sizes: '(min-width: 64rem) 25vw, (min-width: 48rem) 33vw, 50vw'
+              %}
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        {% if paginate.pages > 1 %}
+          <nav class="collection-pagination wrap" aria-label="{{ 'general.pagination' | t }}">
+            <ul class="collection-pagination__list">
+              {% if paginate.previous %}
+                <li>
+                  <a href="{{ paginate.previous.url }}" class="collection-pagination__link" aria-label="{{ 'collection.previous' | t }}">
+                    {% render 'icon', name: 'chevron-left' %}
+                  </a>
+                </li>
+              {% endif %}
+              {% for part in paginate.parts %}
+                <li>
+                  {% if part.is_link %}
+                    <a href="{{ part.url }}" class="collection-pagination__link">{{ part.title }}</a>
+                  {% else %}
+                    <span class="collection-pagination__link collection-pagination__link--current" aria-current="page">
+                      {{ part.title }}
+                    </span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+              {% if paginate.next %}
+                <li>
+                  <a href="{{ paginate.next.url }}" class="collection-pagination__link" aria-label="{{ 'collection.next' | t }}">
+                    {% render 'icon', name: 'chevron-right' %}
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+      {% endpaginate %}
+    {% endif %}
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  .search-results-page {
+    padding-block: var(--section-padding);
+  }
+  .search-results-page__title {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-6);
+  }
+
+  .search-results-page__form {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 28rem;
+  }
+  .search-results-page__input {
+    flex: 1 1 auto;
+    min-height: 2.75rem;
+  }
+
+  .search-results-page__summary {
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .search-results-page__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6) var(--space-5);
+  }
+  @media (min-width: 48rem) {
+    .search-results-page__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (min-width: 64rem) {
+    .search-results-page__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:general.main_search",
+  "settings": []
+}
+{% endschema %}

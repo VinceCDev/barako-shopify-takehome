@@ -1,0 +1,202 @@
+{% doc %}
+  Global toast/snackbar region, rendered once in the layout, bottom-left.
+  Any other script calls window.BarakoToast.show(message, options) to pop
+  a message here — used after add to cart, favoriting, and cart edits so
+  those actions get visible confirmation.
+
+  @example
+  {% render 'toast' %}
+{% enddoc %}
+
+<div class="toast-region" popover="manual" aria-live="polite" aria-atomic="true" data-toast-region></div>
+
+{% stylesheet %}
+  /* A native <dialog> opened with showModal() (the quick-view modal, the
+     confirm dialog) renders in the browser's top layer, which sits above
+     every ordinary z-index regardless of value — so a plain fixed div
+     would show up behind an open modal. `popover` promotes this region
+     into the top layer too; JS calls showPopover() on each toast so it
+     stacks above whichever dialog is currently open. */
+  .toast-region {
+    position: fixed;
+    inset: auto auto var(--space-5) var(--space-5);
+    margin: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: var(--space-3);
+    width: min(calc(100vw - var(--space-5) * 2), 22rem);
+    padding: 0;
+    border: none;
+    background: none;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .toast-region:popover-open {
+    display: flex;
+  }
+
+  .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border-inline-start: 3px solid var(--toast-accent, #2E9E5B);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.16);
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+  }
+  .toast--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .toast__icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: var(--toast-accent, #2E9E5B);
+    color: #fff;
+  }
+  .toast__icon svg {
+    width: 0.875rem;
+  }
+
+  .toast__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .toast__title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+  .toast__message {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .toast--error {
+    --toast-accent: #C1462E;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  window.BarakoToast = (function () {
+    var region = document.querySelector('[data-toast-region]');
+
+    var ICONS = {
+      success:
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5L6.5 12L13 4"/></svg>',
+      error:
+        '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v5"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor" stroke="none"/></svg>',
+    };
+
+    function show(message, options) {
+      if (!region || !message) return;
+      options = options || {};
+      var type = options.type === 'error' ? 'error' : 'success';
+      var title = options.title || (type === 'error' ? 'Something went wrong' : 'Success');
+
+      var toast = document.createElement('div');
+      toast.className = 'toast toast--' + type;
+      toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+      var icon = document.createElement('span');
+      icon.className = 'toast__icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.innerHTML = ICONS[type];
+
+      var body = document.createElement('div');
+      body.className = 'toast__body';
+
+      var titleEl = document.createElement('p');
+      titleEl.className = 'toast__title';
+      titleEl.textContent = title;
+
+      var messageEl = document.createElement('p');
+      messageEl.className = 'toast__message';
+      messageEl.textContent = message;
+
+      body.appendChild(titleEl);
+      body.appendChild(messageEl);
+      toast.appendChild(icon);
+      toast.appendChild(body);
+      region.appendChild(toast);
+
+      /* Re-showing an already-open popover throws — and calling this each
+         time (rather than once) is what lets a toast triggered while a
+         modal is open stack above it: the popover only jumps to the top
+         of the top-layer stack when it's (re)shown. */
+      if (region.showPopover) {
+        try {
+          region.hidePopover();
+        } catch (e) {
+          // Wasn't open — nothing to hide.
+        }
+        try {
+          region.showPopover();
+        } catch (e) {
+          // Already showing somehow — fine, it's visible either way.
+        }
+      }
+
+      requestAnimationFrame(function () {
+        toast.classList.add('toast--visible');
+      });
+
+      window.setTimeout(function () {
+        toast.classList.remove('toast--visible');
+        toast.addEventListener(
+          'transitionend',
+          function () {
+            toast.remove();
+            if (region.showPopover && !region.childElementCount) region.hidePopover();
+          },
+          { once: true }
+        );
+      }, 3500);
+    }
+
+    var PENDING_KEY = 'barako:pending-toast';
+
+    /* For actions that reload the page right after (removing a cart line,
+       for example) — a toast shown immediately before navigation never
+       gets to animate in. This stashes it for the next page load instead. */
+    function showAfterReload(message, options) {
+      try {
+        sessionStorage.setItem(PENDING_KEY, JSON.stringify({ message: message, options: options || {} }));
+      } catch (e) {
+        show(message, options);
+      }
+    }
+
+    (function showPending() {
+      var raw;
+      try {
+        raw = sessionStorage.getItem(PENDING_KEY);
+        if (raw) sessionStorage.removeItem(PENDING_KEY);
+      } catch (e) {
+        return;
+      }
+      if (!raw) return;
+      try {
+        var pending = JSON.parse(raw);
+        show(pending.message, pending.options);
+      } catch (e) {
+        // Malformed stored value — nothing to show.
+      }
+    })();
+
+    return { show: show, showAfterReload: showAfterReload };
+  })();
+{% endjavascript %}

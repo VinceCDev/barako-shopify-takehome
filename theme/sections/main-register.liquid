@@ -1,0 +1,52 @@
+{% comment %}
+  Registration page.
+{% endcomment %}
+
+<div class="account-form-page wrap">
+  <div class="account-form-page__inner">
+    <h1 class="account-form-page__title">{{ 'customers.register.title' | t }}</h1>
+
+    {% form 'create_customer' %}
+      {% if form.errors %}
+        <p class="account-form-page__error" role="alert">
+          {{ form.errors | default_errors }}
+        </p>
+      {% endif %}
+
+      <div class="account-form-page__row">
+        <div class="account-form-page__field">
+          <label for="FirstName">{{ 'customers.register.first_name' | t }}</label>
+          <input type="text" id="FirstName" name="customer[first_name]" autocomplete="given-name">
+        </div>
+        <div class="account-form-page__field">
+          <label for="LastName">{{ 'customers.register.last_name' | t }}</label>
+          <input type="text" id="LastName" name="customer[last_name]" autocomplete="family-name">
+        </div>
+      </div>
+
+      <div class="account-form-page__field">
+        <label for="RegisterEmail">{{ 'customers.register.email' | t }}</label>
+        <input type="email" id="RegisterEmail" name="customer[email]" autocomplete="email" required>
+      </div>
+
+      <div class="account-form-page__field">
+        <label for="RegisterPassword">{{ 'customers.register.password' | t }}</label>
+        <input type="password" id="RegisterPassword" name="customer[password]" autocomplete="new-password" required>
+      </div>
+
+      <button type="submit" class="button account-form-page__submit">{{ 'customers.register.submit' | t }}</button>
+    {% endform %}
+
+    <p class="account-form-page__switch">
+      {{ 'customers.register.have_account' | t }}
+      <a href="{{ routes.account_login_url }}" class="text-link">{{ 'customers.register.sign_in' | t }}</a>
+    </p>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "t:general.main_register",
+  "settings": []
+}
+{% endschema %}

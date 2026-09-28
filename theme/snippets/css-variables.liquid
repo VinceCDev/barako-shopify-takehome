@@ -55,10 +55,10 @@
     /* Section rhythm: ~72px mobile, ~120px desktop, per the art direction */
     --section-padding: var(--space-9);
 
-    /* Shape: square to near-square only, no pill shapes */
-    --radius-sm: 0px;
-    --radius-md: 2px;
-    --radius-full: 2px;
+    /* Shape: soft rounding across buttons, inputs, cards and containers */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-full: 999px;
     --style-border-radius-inputs: {{ settings.input_corner_radius }}px;
 
     /* Type scale: a ~1.25 modular ratio, fluid via clamp() from --font-size-lg

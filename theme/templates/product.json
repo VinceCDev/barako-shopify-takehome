@@ -10,11 +10,26 @@
 {
   "sections": {
     "main": {
-      "type": "product",
+      "type": "main-product",
+      "settings": {}
+    },
+    "flavor-profile": {
+      "type": "flavor-profile",
+      "settings": {}
+    },
+    "reviews": {
+      "type": "product-reviews",
+      "settings": {}
+    },
+    "recommendations": {
+      "type": "product-recommendations",
       "settings": {}
     }
   },
   "order": [
-    "main"
+    "main",
+    "flavor-profile",
+    "reviews",
+    "recommendations"
   ]
 }

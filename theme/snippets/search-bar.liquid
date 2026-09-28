@@ -1,0 +1,166 @@
+{% doc %}
+  Plain GET search form — works without JS. Shared by the collection and
+  product pages so shoppers can search from either.
+
+  @param {string} [id] - element id for the input/label pair; defaults to
+    'Search' (pass a unique value if more than one search-bar renders on
+    the same page)
+  @param {string} [mode] - 'site' (default): submits to the storefront's
+    global /search page. 'collection': stays on the page and live-filters
+    the collection grid's already-rendered product cards instead of
+    searching the whole catalog. 'collection-redirect': for a page (like
+    a product page) that has no product grid of its own to filter —
+    navigates to the given collection with `?q=` set, and that
+    collection's own 'collection' search-bar picks the query back up on
+    load. Without JS, 'collection'/'collection-redirect' are a harmless
+    no-op GET back to the collection URL, since there's no server-side
+    way to scope Shopify's search to one collection without an app.
+  @param {collection} [collection] - the collection to scope to, for
+    'collection' and 'collection-redirect' modes (defaults to the page's
+    own `collection` object, so it only needs passing explicitly when
+    rendering somewhere without one, like a product page)
+
+  @example
+  {% render 'search-bar' %}
+  {% render 'search-bar', id: 'ProductSearch' %}
+  {% render 'search-bar', id: 'CollectionSearch', mode: 'collection' %}
+  {% render 'search-bar', id: 'ProductSearch', mode: 'collection-redirect', collection: product.collections.first %}
+{% enddoc %}
+
+{% liquid
+  assign input_id = id | default: 'Search'
+  assign search_mode = mode | default: 'site'
+  assign scoped_collection = collection
+  assign action_url = routes.search_url
+  assign placeholder_text = 'collection.search_placeholder' | t
+
+  if search_mode == 'collection' or search_mode == 'collection-redirect'
+    assign action_url = scoped_collection.url | default: routes.search_url
+    assign placeholder_text = 'collection.search_this_collection_placeholder' | t
+  endif
+%}
+
+<form
+  action="{{ action_url }}"
+  method="get"
+  role="search"
+  class="search-bar"
+  data-search-mode="{{ search_mode }}"
+>
+  {% if search_mode == 'site' %}
+    <input type="hidden" name="type" value="product">
+  {% endif %}
+  <label for="{{ input_id }}" class="visually-hidden">{{ placeholder_text }}</label>
+  <input
+    type="search"
+    name="q"
+    id="{{ input_id }}"
+    value="{{ search.terms | escape }}"
+    placeholder="{{ placeholder_text }}"
+    class="search-bar__input"
+    {% if search_mode == 'collection' %}
+      data-collection-search-input
+      autocomplete="off"
+    {% endif %}
+  >
+  <button type="submit" class="search-bar__submit" aria-label="{{ 'search.submit' | t }}">
+    {% render 'icon', name: 'search' %}
+  </button>
+</form>
+
+{% if search_mode == 'collection' %}
+  <p
+    class="collection-search-empty"
+    data-collection-search-empty
+    data-template="{{ 'collection.search_no_matches' | t: terms: '%%QUERY%%' }}"
+    hidden
+  ></p>
+{% endif %}
+
+{% stylesheet %}
+  .search-bar {
+    display: flex;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .search-bar__input {
+    flex: 1 1 auto;
+    min-height: 2.75rem;
+    border-right: none;
+  }
+  .search-bar__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-left: none;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .search-bar__submit svg {
+    width: 1.125rem;
+  }
+  .collection-search-empty {
+    margin-top: var(--space-4);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+  }
+  /* .product-card sets its own `display`, which otherwise beats the [hidden]
+     UA rule at equal specificity since author styles always win over the
+     UA stylesheet regardless of source order. */
+  .product-card[hidden] {
+    display: none;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  function filterCollectionCards(input) {
+    const form = input.closest('form');
+    const query = input.value.trim().toLowerCase();
+    const cards = document.querySelectorAll('.product-card[data-product-title]');
+    const emptyEl = form.parentElement.querySelector('[data-collection-search-empty]');
+    let visibleCount = 0;
+
+    cards.forEach(function (card) {
+      const title = (card.getAttribute('data-product-title') || '').toLowerCase();
+      const matches = query === '' || title.indexOf(query) !== -1;
+      card.hidden = !matches;
+      if (matches) visibleCount += 1;
+    });
+
+    if (emptyEl) {
+      emptyEl.hidden = !(query !== '' && visibleCount === 0);
+      emptyEl.textContent = emptyEl.hidden ? '' : emptyEl.getAttribute('data-template').replace('%%QUERY%%', input.value.trim());
+    }
+  }
+
+  document.addEventListener('input', function (event) {
+    const input = event.target.closest('[data-collection-search-input]');
+    if (!input) return;
+    filterCollectionCards(input);
+  });
+
+  document.addEventListener('submit', function (event) {
+    const form = event.target.closest('[data-search-mode="collection"]');
+    if (!form) return;
+    // Filtering already happens live on input — no need to leave the page.
+    event.preventDefault();
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Arriving here from a product page's "search this collection" box
+    // (mode: collection-redirect) — pick the query back up from the URL
+    // and apply it immediately.
+    const input = document.querySelector('[data-collection-search-input]');
+    if (!input) return;
+
+    const query = new URLSearchParams(window.location.search).get('q');
+    if (query) {
+      input.value = query;
+      filterCollectionCards(input);
+    }
+  });
+{% endjavascript %}

@@ -8,5 +8,8 @@
  * ------------------------------------------------------------
  */
 {
-  "current": {}
+  "current": {
+    "coffee_collection": "coffee",
+    "brewing_gear_collection": "brewing-gear"
+  }
 }

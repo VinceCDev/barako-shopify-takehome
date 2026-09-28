@@ -16,27 +16,216 @@
   "cart": {
     "checkout": "Checkout",
     "title": "Cart",
+    "subtitle": "Review your items before checkout.",
+    "items_heading": "Cart items",
     "update": "Update",
     "remove": "Remove",
     "item_count": {
       "one": "{{ count }} item",
       "other": "{{ count }} items"
-    }
+    },
+    "quantity": "Quantity",
+    "decrease_quantity": "Decrease quantity",
+    "increase_quantity": "Increase quantity",
+    "line_total": "Total amount",
+    "edit": "Edit",
+    "done": "Done",
+    "select_all": "Select all",
+    "select_item": "Select {{ title }}",
+    "items_selected": {
+      "one": "{{ count }} item selected",
+      "other": "{{ count }} items selected"
+    },
+    "remove_selected": "Remove selected",
+    "shipping_details": "Shipping details",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "address": "Address",
+    "mobile": "Mobile no.",
+    "city": "City",
+    "zip": "ZIP code",
+    "order_note": "Order note",
+    "order_note_placeholder": "Add a note to your order",
+    "subtotal": "Subtotal",
+    "taxes_shipping_at_checkout": "Taxes and shipping calculated at checkout",
+    "empty": "Your cart is empty",
+    "empty_action": "Shop coffee",
+    "item_removed_toast_title": "Item removed",
+    "item_removed_toast": "{{ title }} removed from cart.",
+    "items_removed_toast_title": "Items removed",
+    "items_removed_toast": {
+      "one": "{{ count }} item removed from cart.",
+      "other": "{{ count }} items removed from cart."
+    },
+    "updated_toast": "Cart updated.",
+    "order_placed_toast_title": "Order placed",
+    "order_placed_toast": "Your order has been placed. Thank you for shopping with us!",
+    "remove_item_title": "Remove item",
+    "remove_item_message": "Are you sure you want to remove {{ title }}?",
+    "remove_selected_title": "Remove items",
+    "remove_selected_message": {
+      "one": "Are you sure you want to remove {{ count }} item?",
+      "other": "Are you sure you want to remove {{ count }} items?"
+    },
+    "remove_confirm": "Remove",
+    "cancel": "Cancel",
+    "payment_method_title": "Choose a payment method",
+    "payment_method_message": "How would you like to pay for this order?",
+    "payment_method_card": "Card",
+    "payment_method_ewallet": "E-wallet",
+    "payment_method_cod": "Cash on delivery",
+    "payment_method_continue": "Continue to checkout"
   },
   "customers": {
     "login": {
+      "title": "Login",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
-      "title": "Login"
+      "forgot_password": "Forgot your password?",
+      "no_account": "New here?",
+      "create_account": "Create an account",
+      "wrong_credentials": "Incorrect email or password."
+    },
+    "register": {
+      "title": "Register",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Create account",
+      "have_account": "Already have an account?",
+      "sign_in": "Sign in"
+    },
+    "account": {
+      "title": "My account",
+      "orders_title": "Order history",
+      "no_orders": "You haven't placed any orders yet.",
+      "order_number": "Order {{ number }}",
+      "order_date": "Placed {{ date }}",
+      "order_total": "Total",
+      "order_status": "Status",
+      "logout": "Log out",
+      "logout_confirm_title": "Log out",
+      "logout_confirm_message": "Are you sure you want to log out?",
+      "logout_confirm_action": "Log out",
+      "view_order": "View order",
+      "view_profile": "View profile",
+      "profile_title": "My profile",
+      "name": "Name",
+      "no_name": "Not provided",
+      "email": "Email",
+      "address": "Address",
+      "edit_profile": "Edit profile",
+      "edit_profile_dialog_title": "Editing isn't available here",
+      "edit_profile_dialog_message": "This store uses Shopify's account system to keep your name, email, and password secure — changes aren't made from this page. Use the sign-in link in the header, or get in touch with us, to update your details.",
+      "edit_profile_dialog_dismiss": "Got it",
+      "please_sign_in": "Please sign in to view your profile."
+    },
+    "reset_password": {
+      "title": "Reset your password",
+      "subtext": "We'll email you a link to reset your password.",
+      "email": "Email",
+      "submit": "Submit"
+    },
+    "activate_account": {
+      "title": "Activate your account",
+      "subtext": "Create your password to activate your account.",
+      "password": "Password",
+      "password_confirm": "Confirm password",
+      "submit": "Activate account"
     }
   },
   "collections": {
     "title": "Collections"
   },
+  "contact": {
+    "intro": "Have a question about an order, our beans, or brewing gear? We'd love to hear from you.",
+    "form_title": "Send us a message",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "message": "Message",
+    "submit": "Send message",
+    "success": "Thanks — we'll get back to you soon."
+  },
   "general": {
     "menu": "Menu",
-    "skip_to_content": "Skip to content"
+    "skip_to_content": "Skip to content",
+    "close": "Close",
+    "pagination": "Pagination",
+    "breadcrumbs": "Breadcrumb",
+    "breadcrumbs_home": "Home"
+  },
+  "products": {
+    "product": {
+      "sold_out": "Sold out",
+      "unavailable": "Unavailable",
+      "from_price_html": "From {{ price }}",
+      "add_to_cart": "Add to cart",
+      "added_to_cart": "Added to cart.",
+      "added_to_cart_toast_title": "Added to cart",
+      "added_to_cart_toast": "{{ title }} added to your cart.",
+      "quantity": "Quantity",
+      "decrease_quantity": "Decrease quantity",
+      "increase_quantity": "Increase quantity",
+      "you_might_also_like": "You might also like",
+      "variant": "Variant",
+      "view_image": "View image {{ index }}",
+      "add_to_favorites": "Add to favorites",
+      "remove_from_favorites": "Remove from favorites",
+      "added_to_favorites_toast_title": "Added to favorites",
+      "added_to_favorites_toast": "{{ title }} added to your favorites.",
+      "added_to_favorites_toast_generic": "Added to your favorites.",
+      "removed_from_favorites_toast_title": "Removed from favorites",
+      "removed_from_favorites_toast": "{{ title }} removed from your favorites.",
+      "removed_from_favorites_toast_generic": "Removed from your favorites.",
+      "rating_label": "Rated {{ rating }} out of {{ max }}",
+      "rating_ratio": "{{ rating }} / {{ max }}",
+      "read_more": "Read more",
+      "quick_view": "Quick view {{ title }}",
+      "quick_view_short": "Quick view",
+      "view_full_details": "View full details"
+    },
+    "reviews": {
+      "heading": "Reviews",
+      "count": {
+        "one": "{{ count }} review",
+        "other": "{{ count }} reviews"
+      },
+      "empty": "No reviews yet — be the first to share what you think.",
+      "form_title": "Write a review",
+      "name": "Name",
+      "rating": "Rating",
+      "rating_value": "{{ rating }} out of 5 stars",
+      "comment": "Comment",
+      "submit": "Submit review",
+      "noscript": "Enable JavaScript to write a review.",
+      "thanks_title": "Review submitted",
+      "thanks_text": "Thanks for sharing your thoughts!"
+    }
+  },
+  "collection": {
+    "search_placeholder": "Search coffee &amp; gear",
+    "search_this_collection_placeholder": "Search this collection",
+    "search_no_matches": "No products match “{{ terms }}” in this collection.",
+    "product_count": {
+      "one": "{{ count }} product",
+      "other": "{{ count }} products"
+    },
+    "sort_by": "Sort by",
+    "filters": "Filters",
+    "filter_and_sort": "Filter and sort",
+    "clear_filters": "Clear all",
+    "apply_filters": "Show results",
+    "availability": "Availability",
+    "price": "Price",
+    "no_products": "No products found",
+    "no_products_body": "Try removing a filter, or browse the full collection.",
+    "view_all": "View all products",
+    "previous": "Previous",
+    "next": "Next",
+    "page_of": "Page {{ current }} of {{ total }}"
   },
   "footer": {
     "newsletter_heading": "Join the kapihan",

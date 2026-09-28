@@ -1,0 +1,325 @@
+{% doc %}
+  One shared <dialog>, rendered once in layout/theme.liquid, reused by
+  every "Quick view" button on any product-card anywhere on the page.
+  Fetches {{ product.url }}.js on click. Deliberately minimal: just the
+  first available variant added at quantity 1, plus a favorite toggle —
+  no variant picker or quantity stepper here, that's what the full
+  product page is for. Clicking "Add to cart" goes straight to the cart
+  page rather than staying on this one with a confirmation message.
+
+  @example
+  {% render 'quick-view-modal' %}
+{% enddoc %}
+
+<dialog
+  id="QuickViewModal"
+  class="quick-view-modal"
+  data-rating-ratio-template="{{ 'products.product.rating_ratio' | t: rating: '%%RATING%%', max: '5.0' }}"
+>
+  <div class="quick-view-modal__inner">
+    <button type="button" class="quick-view-modal__close" data-quick-view-close aria-label="{{ 'general.close' | t }}">
+      {% render 'icon', name: 'close' %}
+    </button>
+
+    <div class="quick-view-modal__body">
+      <div class="quick-view-modal__media">
+        <img data-quick-view-image alt="" width="600" height="750">
+      </div>
+
+      <div class="quick-view-modal__info">
+        <h2 class="quick-view-modal__title" data-quick-view-title></h2>
+        <p class="quick-view-modal__rating" data-quick-view-rating hidden>
+          {% render 'icon', name: 'star' %}
+          <span data-quick-view-rating-value></span>
+        </p>
+        <p class="quick-view-modal__price" data-quick-view-price></p>
+        <p class="quick-view-modal__description" data-quick-view-description></p>
+
+        <div class="quick-view-modal__actions">
+          <button
+            type="button"
+            class="button quick-view-modal__add"
+            data-quick-view-add
+            data-variant-id=""
+            data-cart-url="{{ routes.cart_url }}"
+            data-add-text="{{ 'products.product.add_to_cart' | t }}"
+            data-sold-out-text="{{ 'products.product.sold_out' | t }}"
+          >
+            {{ 'products.product.add_to_cart' | t }}
+          </button>
+          <button
+            type="button"
+            class="quick-view-modal__favorite"
+            data-favorite-toggle
+            data-product-id=""
+            data-add-label="{{ 'products.product.add_to_favorites' | t }}"
+            data-remove-label="{{ 'products.product.remove_from_favorites' | t }}"
+            data-added-toast-title="{{ 'products.product.added_to_favorites_toast_title' | t }}"
+            data-added-toast="{{ 'products.product.added_to_favorites_toast_generic' | t }}"
+            data-removed-toast-title="{{ 'products.product.removed_from_favorites_toast_title' | t }}"
+            data-removed-toast="{{ 'products.product.removed_from_favorites_toast_generic' | t }}"
+            aria-pressed="false"
+            aria-label="{{ 'products.product.add_to_favorites' | t }}"
+          >
+            {% render 'icon', name: 'heart' %}
+            <span>{{ 'products.product.add_to_favorites' | t }}</span>
+          </button>
+        </div>
+
+        <a href="#" class="text-link quick-view-modal__link" data-quick-view-link>
+          {{ 'products.product.view_full_details' | t }}
+        </a>
+
+        <p class="visually-hidden" role="status" aria-live="polite" data-quick-view-status></p>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+{% stylesheet %}
+  /* Explicit fixed + translate centering, rather than relying on the
+     UA's default dialog:modal auto-margin behavior — a plain block that
+     doesn't get centered by that default at all, this makes centering
+     unambiguous regardless of how any browser handles the default. */
+  .quick-view-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0;
+    border: none;
+    max-width: 48rem;
+    width: min(92vw, 48rem);
+    max-height: 88vh;
+    overflow-y: auto;
+    background-color: var(--color-background);
+    border-radius: var(--radius-md);
+  }
+  .quick-view-modal::backdrop {
+    background-color: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  }
+
+  .quick-view-modal__close {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    background-color: var(--color-paper);
+    border: none;
+    border-radius: var(--radius-full);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .quick-view-modal__close svg {
+    width: 1.125rem;
+  }
+
+  .quick-view-modal__body {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 40rem) {
+    .quick-view-modal__body {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .quick-view-modal__media {
+    aspect-ratio: 4 / 5;
+    background-color: var(--color-surface);
+  }
+  .quick-view-modal__media img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  .quick-view-modal__info {
+    padding: var(--space-6);
+  }
+  .quick-view-modal__title {
+    font-size: var(--font-size-xl);
+  }
+  .quick-view-modal__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding: 0.1875rem var(--space-3);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+  }
+  .quick-view-modal__rating svg {
+    width: 0.875rem;
+    fill: var(--color-primary);
+    stroke: var(--color-primary);
+  }
+  .quick-view-modal__price {
+    margin-top: var(--space-3);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+  .quick-view-modal__description {
+    margin-top: var(--space-4);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .quick-view-modal__actions {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .quick-view-modal__add {
+    flex: 1 1 10rem;
+  }
+  .quick-view-modal__favorite {
+    display: inline-flex;
+    flex: 1 1 10rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+  }
+  .quick-view-modal__favorite svg {
+    width: 1.125rem;
+  }
+  .quick-view-modal__favorite[aria-pressed='true'] svg {
+    fill: var(--color-primary);
+    stroke: var(--color-primary);
+  }
+
+  .quick-view-modal__link {
+    display: block;
+    margin-top: var(--space-4);
+    text-align: center;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    var dialog = document.getElementById('QuickViewModal');
+    if (!dialog) return;
+
+    var imageEl = dialog.querySelector('[data-quick-view-image]');
+    var titleEl = dialog.querySelector('[data-quick-view-title]');
+    var ratingEl = dialog.querySelector('[data-quick-view-rating]');
+    var ratingValueEl = dialog.querySelector('[data-quick-view-rating-value]');
+    var priceEl = dialog.querySelector('[data-quick-view-price]');
+    var descriptionEl = dialog.querySelector('[data-quick-view-description]');
+    var addButton = dialog.querySelector('[data-quick-view-add]');
+    var favoriteButton = dialog.querySelector('[data-favorite-toggle]');
+    var statusEl = dialog.querySelector('[data-quick-view-status]');
+    var linkEl = dialog.querySelector('[data-quick-view-link]');
+    var closeButton = dialog.querySelector('[data-quick-view-close]');
+
+    function moneyFormat(cents) {
+      return '₱' + (cents / 100).toFixed(2);
+    }
+
+    document.addEventListener('click', function (event) {
+      var trigger = event.target.closest('[data-quick-view-trigger]');
+      if (!trigger) return;
+
+      fetch(trigger.getAttribute('data-product-url'))
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (product) {
+          var variant = product.variants[0];
+
+          titleEl.textContent = product.title;
+
+          var rating = parseFloat(trigger.getAttribute('data-rating'));
+          if (rating) {
+            var template = dialog.getAttribute('data-rating-ratio-template') || '';
+            ratingValueEl.textContent = template.replace('%%RATING%%', rating.toFixed(1));
+            ratingEl.hidden = false;
+          } else {
+            ratingEl.hidden = true;
+          }
+
+          priceEl.textContent = moneyFormat(variant.price);
+          descriptionEl.textContent = (product.description || '').replace(/<[^>]*>/g, '').slice(0, 160);
+          linkEl.setAttribute('href', product.url);
+          /* Shopify's own product JSON has no idea about our bundled
+             fallback photos (those are rendered purely in Liquid on the
+             card/PDP) — pass the same fallback URL through explicitly,
+             computed server-side, rather than trying to reconstruct the
+             theme asset path in JS. */
+          imageEl.src = product.featured_image || (product.images[0] || '') || trigger.getAttribute('data-fallback-image') || '';
+          imageEl.alt = product.title;
+          statusEl.textContent = '';
+
+          addButton.setAttribute('data-variant-id', variant.id);
+          addButton.disabled = !variant.available;
+          addButton.textContent = variant.available
+            ? addButton.getAttribute('data-add-text')
+            : addButton.getAttribute('data-sold-out-text');
+
+          favoriteButton.setAttribute('data-product-id', product.id);
+          var favorited = window.BarakoFavorites ? window.BarakoFavorites.isFavorited(product.id) : false;
+          favoriteButton.setAttribute('aria-pressed', favorited ? 'true' : 'false');
+
+          dialog.showModal();
+        })
+        .catch(function () {
+          /* Quietly do nothing — the product's own page is always still
+             reachable via its normal link. */
+        });
+    });
+
+    closeButton.addEventListener('click', function () {
+      dialog.close();
+    });
+
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) dialog.close();
+    });
+
+    addButton.addEventListener('click', function () {
+      addButton.disabled = true;
+
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ id: addButton.getAttribute('data-variant-id'), quantity: 1 }),
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            return { ok: response.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          if (!result.ok) {
+            addButton.disabled = false;
+            statusEl.textContent = result.data.description || 'Something went wrong.';
+            return;
+          }
+          window.location.href = addButton.getAttribute('data-cart-url');
+        })
+        .catch(function () {
+          addButton.disabled = false;
+          statusEl.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+  });
+{% endjavascript %}

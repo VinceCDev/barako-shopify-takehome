@@ -1,0 +1,170 @@
+{% doc %}
+  Global payment-method dialog, rendered once in the layout. The cart page
+  calls window.BarakoPaymentDialog.show() before "checking out" (simulated
+  — see main-cart.liquid), and gets back a Promise that resolves to the
+  chosen method's label, or null if the dialog was dismissed.
+
+  @example
+  {% render 'payment-method-dialog' %}
+{% enddoc %}
+
+<dialog class="payment-dialog" data-payment-dialog>
+  <h2 class="payment-dialog__title">{{ 'cart.payment_method_title' | t }}</h2>
+  <p class="payment-dialog__message">{{ 'cart.payment_method_message' | t }}</p>
+
+  <div class="payment-dialog__options" role="radiogroup" aria-label="{{ 'cart.payment_method_title' | t }}">
+    <label class="payment-dialog__option">
+      <input type="radio" name="payment_method_choice" value="{{ 'cart.payment_method_card' | t }}" checked>
+      {% render 'icon', name: 'check' %}
+      <span>{{ 'cart.payment_method_card' | t }}</span>
+    </label>
+    <label class="payment-dialog__option">
+      <input type="radio" name="payment_method_choice" value="{{ 'cart.payment_method_ewallet' | t }}">
+      {% render 'icon', name: 'check' %}
+      <span>{{ 'cart.payment_method_ewallet' | t }}</span>
+    </label>
+    <label class="payment-dialog__option">
+      <input type="radio" name="payment_method_choice" value="{{ 'cart.payment_method_cod' | t }}">
+      {% render 'icon', name: 'check' %}
+      <span>{{ 'cart.payment_method_cod' | t }}</span>
+    </label>
+  </div>
+
+  <div class="payment-dialog__actions">
+    <button type="button" class="payment-dialog__cancel" data-payment-cancel>{{ 'cart.cancel' | t }}</button>
+    <button type="button" class="button payment-dialog__continue" data-payment-continue>
+      {{ 'cart.payment_method_continue' | t }}
+    </button>
+  </div>
+</dialog>
+
+{% stylesheet %}
+  .payment-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: var(--space-6);
+    border: none;
+    border-radius: var(--radius-md);
+    width: min(90vw, 26rem);
+    background-color: var(--color-background);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+  }
+  .payment-dialog::backdrop {
+    background-color: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  }
+
+  .payment-dialog__title {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+  .payment-dialog__message {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .payment-dialog__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+  .payment-dialog__option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .payment-dialog__option:has(input:checked) {
+    border-color: var(--color-primary);
+    background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+  .payment-dialog__option input {
+    position: absolute;
+    opacity: 0;
+  }
+  .payment-dialog__option svg {
+    width: 1.125rem;
+    color: var(--color-primary);
+    visibility: hidden;
+  }
+  .payment-dialog__option:has(input:checked) svg {
+    visibility: visible;
+  }
+  .payment-dialog__option:has(input:focus-visible) {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .payment-dialog__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+  .payment-dialog__cancel,
+  .payment-dialog__continue {
+    flex: 1 1 0;
+    min-height: 2.75rem;
+  }
+  .payment-dialog__cancel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    cursor: pointer;
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  window.BarakoPaymentDialog = (function () {
+    var dialog = document.querySelector('[data-payment-dialog]');
+    if (!dialog) return { show: function () { return Promise.resolve(null); } };
+
+    var cancelButton = dialog.querySelector('[data-payment-cancel]');
+    var continueButton = dialog.querySelector('[data-payment-continue]');
+    var activeResolve = null;
+
+    function settle(value) {
+      if (dialog.open) dialog.close();
+      if (activeResolve) {
+        activeResolve(value);
+        activeResolve = null;
+      }
+    }
+
+    cancelButton.addEventListener('click', function () {
+      settle(null);
+    });
+    continueButton.addEventListener('click', function () {
+      var checked = dialog.querySelector('input[name="payment_method_choice"]:checked');
+      settle(checked ? checked.value : null);
+    });
+    dialog.addEventListener('cancel', function () {
+      activeResolve && activeResolve(null);
+      activeResolve = null;
+    });
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) settle(null);
+    });
+
+    function show() {
+      return new Promise(function (resolve) {
+        activeResolve = resolve;
+        dialog.showModal();
+      });
+    }
+
+    return { show: show };
+  })();
+{% endjavascript %}

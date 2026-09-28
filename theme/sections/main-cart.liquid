@@ -1,0 +1,950 @@
+{% comment %}
+  Cart page: line items work via a plain form POST to /cart (no JS
+  required — quantity fields, the note, and checkout all just work),
+  enhanced with /cart/change.js so quantity/remove update in place.
+{% endcomment %}
+
+<div class="cart-page wrap" id="CartPage">
+  <div class="cart-page__header">
+    <h1 class="cart-page__title">{{ 'cart.title' | t }}</h1>
+    <p class="cart-page__subtitle">{{ 'cart.subtitle' | t }}</p>
+  </div>
+
+  {% if cart.item_count > 0 %}
+    <div class="cart-page__layout">
+      <form
+        action="{{ routes.cart_url }}"
+        method="post"
+        id="CartForm"
+        class="cart-page__form"
+        data-remove-item-title="{{ 'cart.remove_item_title' | t }}"
+        data-remove-item-message="{{ 'cart.remove_item_message' | t: title: '%%TITLE%%' }}"
+        data-remove-confirm-label="{{ 'cart.remove_confirm' | t }}"
+        data-cancel-label="{{ 'cart.cancel' | t }}"
+        data-remove-selected-title="{{ 'cart.remove_selected_title' | t }}"
+        data-remove-selected-message-one="{{ 'cart.remove_selected_message' | t: count: 1 }}"
+        data-remove-selected-message-other="{{ 'cart.remove_selected_message' | t: count: 2 }}"
+        data-item-removed-toast-title="{{ 'cart.item_removed_toast_title' | t }}"
+        data-item-removed-toast="{{ 'cart.item_removed_toast' | t: title: '%%TITLE%%' }}"
+        data-items-removed-toast-title="{{ 'cart.items_removed_toast_title' | t }}"
+        data-items-removed-toast-one="{{ 'cart.items_removed_toast' | t: count: 1 }}"
+        data-items-removed-toast-other="{{ 'cart.items_removed_toast' | t: count: 2 }}"
+        data-updated-toast="{{ 'cart.updated_toast' | t }}"
+        data-order-placed-toast-title="{{ 'cart.order_placed_toast_title' | t }}"
+        data-order-placed-toast="{{ 'cart.order_placed_toast' | t }}"
+      >
+        <div class="cart-items-panel">
+          <h2 class="cart-items-panel__title">{{ 'cart.items_heading' | t }}</h2>
+
+          {% comment %}
+            Checkboxes are always available (not gated behind "Edit") since
+            a shopper might want to select just some items — the "Edit"
+            toggle only controls whether the per-item remove/favorite icons
+            are shown. "Remove selected" only appears once something is
+            checked, and sits next to Edit/Done when it does.
+          {% endcomment %}
+          <div class="cart-items__toolbar js-only">
+            <div class="cart-items__select-wrap">
+              <label class="cart-items__select-all">
+                <input type="checkbox" id="CartSelectAll" data-cart-select-all>
+                {{ 'cart.select_all' | t }}
+              </label>
+              <span class="cart-items__selected-count" data-cart-selected-count>
+                {{ 'cart.items_selected' | t: count: 0 }}
+              </span>
+            </div>
+            <div class="cart-items__toolbar-actions">
+              <button type="button" class="cart-pill-button cart-pill-button--danger" data-cart-remove-selected hidden>
+                {{ 'cart.remove_selected' | t }}
+              </button>
+              <button
+                type="button"
+                class="cart-pill-button cart-edit-toggle"
+                data-cart-edit-toggle
+                data-edit-text="{{ 'cart.edit' | t }}"
+                data-done-text="{{ 'cart.done' | t }}"
+              >
+                {{ 'cart.edit' | t }}
+              </button>
+            </div>
+          </div>
+
+          <ul class="cart-items">
+          {% for item in cart.items %}
+            <li
+              class="cart-item"
+              data-line="{{ forloop.index }}"
+              data-product-title="{{ item.product.title | escape }}"
+              data-line-price="{{ item.final_line_price }}"
+            >
+              <input
+                type="checkbox"
+                class="cart-item__checkbox"
+                data-cart-item-checkbox
+                data-line="{{ forloop.index }}"
+                aria-label="{{ 'cart.select_item' | t: title: item.product.title }}"
+              >
+
+              <div class="cart-item__media">
+                {% if item.image %}
+                  {{ item.image | image_url: width: 300 | image_tag: class: 'cart-item__image', loading: 'lazy', alt: item.image.alt | default: item.product.title }}
+                {% elsif item.product.type == 'Coffee' %}
+                  {% comment %}
+                    Same bundled-photo fallback as the product card/page —
+                    the cart's own item.image is blank for these since
+                    they have no real Shopify-uploaded image yet.
+                  {% endcomment %}
+                  <img
+                    src="{{ 'product-' | append: item.product.handle | append: '.jpg' | asset_url }}"
+                    alt=""
+                    width="300"
+                    height="375"
+                    class="cart-item__image"
+                    loading="lazy"
+                  >
+                {% else %}
+                  <div class="cart-item__placeholder"></div>
+                {% endif %}
+              </div>
+
+              <div class="cart-item__details">
+                <a href="{{ item.url }}" class="cart-item__title">{{ item.product.title }}</a>
+                {% unless item.variant.title == 'Default Title' %}
+                  <p class="cart-item__variant">{{ item.variant.title }}</p>
+                {% endunless %}
+                <p class="cart-item__price">{{ item.original_price | money }}</p>
+              </div>
+
+              <div class="cart-item__quantity">
+                <label for="Quantity-{{ forloop.index }}" class="cart-item__field-label">{{ 'cart.quantity' | t }}</label>
+                <div class="qty-stepper">
+                  <button
+                    type="button"
+                    class="qty-stepper__button"
+                    data-cart-qty-decrease
+                    data-line="{{ forloop.index }}"
+                    aria-label="{{ 'cart.decrease_quantity' | t }}"
+                  >
+                    {% render 'icon', name: 'minus' %}
+                  </button>
+                  <input
+                    type="number"
+                    name="updates[{{ forloop.index }}]"
+                    id="Quantity-{{ forloop.index }}"
+                    class="qty-stepper__input"
+                    value="{{ item.quantity }}"
+                    min="0"
+                    data-cart-qty-input
+                    data-line="{{ forloop.index }}"
+                    data-variant-id="{{ item.variant.id }}"
+                  >
+                  <button
+                    type="button"
+                    class="qty-stepper__button"
+                    data-cart-qty-increase
+                    data-line="{{ forloop.index }}"
+                    aria-label="{{ 'cart.increase_quantity' | t }}"
+                  >
+                    {% render 'icon', name: 'plus' %}
+                  </button>
+                </div>
+              </div>
+
+              <div class="cart-item__total-wrap">
+                <span class="cart-item__field-label">{{ 'cart.line_total' | t }}</span>
+                <p class="cart-item__total" data-cart-line-total>{{ item.final_line_price | money }}</p>
+              </div>
+
+              <div class="cart-item__actions">
+                <a
+                  href="{{ item.url_to_remove }}"
+                  class="cart-item__action cart-item__action--remove"
+                  data-cart-remove
+                  data-line="{{ forloop.index }}"
+                  aria-label="{{ 'cart.remove' | t }}"
+                >
+                  {% render 'icon', name: 'trash' %}
+                </a>
+                <button
+                  type="button"
+                  class="cart-item__action cart-item__action--favorite"
+                  data-favorite-toggle
+                  data-product-id="{{ item.product.id }}"
+                  data-add-label="{{ 'products.product.add_to_favorites' | t }}"
+                  data-remove-label="{{ 'products.product.remove_from_favorites' | t }}"
+                  data-added-toast-title="{{ 'products.product.added_to_favorites_toast_title' | t }}"
+                  data-added-toast="{{ 'products.product.added_to_favorites_toast' | t: title: item.product.title }}"
+                  data-removed-toast-title="{{ 'products.product.removed_from_favorites_toast_title' | t }}"
+                  data-removed-toast="{{ 'products.product.removed_from_favorites_toast' | t: title: item.product.title }}"
+                  aria-pressed="false"
+                  aria-label="{{ 'products.product.add_to_favorites' | t }}"
+                >
+                  {% render 'icon', name: 'heart' %}
+                </button>
+              </div>
+            </li>
+          {% endfor %}
+          </ul>
+        </div>
+      </form>
+
+      <div class="cart-page__aside">
+        <div class="cart-shipping">
+          <h2 class="cart-shipping__title">{{ 'cart.shipping_details' | t }}</h2>
+          <div class="cart-shipping__row">
+            <div class="account-form-page__field">
+              <label for="ShipFirstName">{{ 'cart.first_name' | t }}</label>
+              <input
+                type="text"
+                id="ShipFirstName"
+                name="attributes[First name]"
+                form="CartForm"
+                value="{{ cart.attributes['First name'] }}"
+                autocomplete="given-name"
+              >
+            </div>
+            <div class="account-form-page__field">
+              <label for="ShipLastName">{{ 'cart.last_name' | t }}</label>
+              <input
+                type="text"
+                id="ShipLastName"
+                name="attributes[Last name]"
+                form="CartForm"
+                value="{{ cart.attributes['Last name'] }}"
+                autocomplete="family-name"
+              >
+            </div>
+          </div>
+
+          <div class="account-form-page__field">
+            <label for="ShipAddress">{{ 'cart.address' | t }}</label>
+            <input
+              type="text"
+              id="ShipAddress"
+              name="attributes[Address]"
+              form="CartForm"
+              value="{{ cart.attributes['Address'] }}"
+              autocomplete="street-address"
+            >
+          </div>
+
+          <div class="account-form-page__field">
+            <label for="ShipMobile">{{ 'cart.mobile' | t }}</label>
+            <input
+              type="tel"
+              id="ShipMobile"
+              name="attributes[Mobile number]"
+              form="CartForm"
+              value="{{ cart.attributes['Mobile number'] }}"
+              autocomplete="tel"
+            >
+          </div>
+
+          <div class="cart-shipping__row">
+            <div class="account-form-page__field">
+              <label for="ShipCity">{{ 'cart.city' | t }}</label>
+              <input
+                type="text"
+                id="ShipCity"
+                name="attributes[City]"
+                form="CartForm"
+                value="{{ cart.attributes['City'] }}"
+                autocomplete="address-level2"
+              >
+            </div>
+            <div class="account-form-page__field">
+              <label for="ShipZip">{{ 'cart.zip' | t }}</label>
+              <input
+                type="text"
+                id="ShipZip"
+                name="attributes[ZIP code]"
+                form="CartForm"
+                value="{{ cart.attributes['ZIP code'] }}"
+                autocomplete="postal-code"
+              >
+            </div>
+          </div>
+        </div>
+
+      <aside class="cart-summary">
+        <div class="cart-summary__note">
+          <label for="CartNote">{{ 'cart.order_note' | t }}</label>
+          <textarea
+            name="note"
+            id="CartNote"
+            form="CartForm"
+            placeholder="{{ 'cart.order_note_placeholder' | t }}"
+            rows="3"
+          >{{ cart.note }}</textarea>
+        </div>
+
+        <div class="cart-summary__subtotal">
+          <span>{{ 'cart.subtotal' | t }}</span>
+          <span data-cart-subtotal>{{ cart.total_price | money }}</span>
+        </div>
+        <p class="cart-summary__tax-note">{{ 'cart.taxes_shipping_at_checkout' | t }}</p>
+
+        <button type="submit" name="checkout" form="CartForm" class="button cart-summary__checkout">
+          {{ 'cart.checkout' | t }}
+        </button>
+      </aside>
+      </div>
+    </div>
+  {% else %}
+    <div class="cart-empty">
+      <p class="cart-empty__title">{{ 'cart.empty' | t }}</p>
+      <a href="{{ settings.coffee_collection.url | default: routes.all_products_collection_url }}" class="button">
+        {{ 'cart.empty_action' | t }}
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  .cart-page {
+    padding-block: var(--section-padding);
+  }
+  .cart-page__title {
+    font-size: var(--font-size-2xl);
+  }
+  .cart-page__subtitle {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .cart-page__layout {
+    margin-top: var(--space-8);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  @media (min-width: 64rem) {
+    .cart-page__layout {
+      grid-template-columns: 2fr 1fr;
+      align-items: start;
+    }
+  }
+
+  /* The Select all / Edit row is js-only but always visible once JS is
+     active (it lives inside the cart items panel itself, not the page
+     header). Per-item checkboxes are always shown regardless of edit
+     state — "Remove selected" appears next to Edit/Done only once
+     something is checked. */
+  /* Higher specificity than critical.css's `.js .js-only { display: block }`,
+     which would otherwise stack Select all / Edit instead of a row. */
+  .js .cart-items__toolbar.js-only {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .cart-items__select-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .cart-items__select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+  }
+  .cart-items__selected-count {
+    font-size: var(--font-size-sm);
+    color: var(--color-primary);
+  }
+
+  .cart-items__toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* Pill shape here is a deliberate one-off accent for toggle/bulk-action
+     controls, distinct from the theme's square/near-square button
+     language — shared by the Edit/Done toggle and Remove selected so they
+     read as one family of controls sitting side by side. */
+  .cart-pill-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.25rem;
+    padding: var(--space-2) var(--space-5);
+    border: 1px solid var(--color-primary);
+    border-radius: 999px;
+    background-color: transparent;
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+  .cart-pill-button:hover {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .cart-pill-button--danger {
+    display: none;
+    border-color: #C1462E;
+    color: #C1462E;
+  }
+  .cart-pill-button--danger:hover {
+    background-color: #C1462E;
+    color: #fff;
+  }
+  /* Only surfaced once "Edit" is on — and even then, only while something
+     is actually checked (the `hidden` attribute JS toggles based on the
+     selected count). */
+  #CartPage.is-editing .cart-pill-button--danger:not([hidden]) {
+    display: inline-flex;
+  }
+
+  #CartPage.is-editing .cart-edit-toggle {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  .cart-items-panel {
+    background-color: var(--color-surface);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+  }
+  .cart-items-panel__title {
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+
+  .cart-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  /* Each line item is its own card — checkbox, thumbnail, details, qty,
+     total and (edit-mode only) actions, all in one flex row that wraps
+     gracefully on narrow screens instead of juggling a grid template per
+     breakpoint and editing state. */
+  .cart-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.04);
+  }
+  .cart-item__checkbox {
+    flex: 0 0 auto;
+  }
+  .cart-item__media {
+    flex: 0 0 4.5rem;
+    width: 4.5rem;
+    aspect-ratio: 4 / 5;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .cart-item__details {
+    flex: 1 1 12rem;
+    min-width: 9rem;
+  }
+  .cart-item__image {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+  .cart-item__placeholder {
+    width: 100%;
+    height: 100%;
+  }
+
+  .cart-item__title {
+    display: block;
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+  .cart-item__variant {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  /* A light "chip" treatment for price/total instead of plain text, per
+     the reference cart design. */
+  .cart-item__price {
+    display: inline-flex;
+    margin-top: var(--space-2);
+    padding: 0.1875rem var(--space-3);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+  }
+
+  .cart-item__field-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+
+  .cart-item__quantity {
+    flex: 0 0 auto;
+  }
+
+  .cart-item__total-wrap {
+    flex: 0 0 auto;
+    text-align: right;
+  }
+  .cart-item__total {
+    display: inline-flex;
+    padding: 0.1875rem var(--space-3);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Remove/favorite icon actions: always reachable without JS (real
+     link + button), but only surfaced once "Edit" is toggled once JS is
+     active — matching the same .js/.no-js progressive-enhancement pattern
+     used for the select-all toolbar. */
+  .cart-item__actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: var(--space-2);
+  }
+  .js .cart-item__actions {
+    display: none;
+  }
+  #CartPage.is-editing .cart-item__actions {
+    display: flex;
+  }
+  .cart-item__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 1px solid currentcolor;
+    background: none;
+    cursor: pointer;
+  }
+  .cart-item__action svg {
+    width: 1.125rem;
+  }
+  .cart-item__action--remove {
+    color: #C1462E;
+  }
+  .cart-item__action--favorite {
+    color: var(--color-primary);
+  }
+  .cart-item__action--favorite[aria-pressed='true'] svg {
+    fill: var(--color-primary);
+  }
+
+
+  .cart-page__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .cart-shipping {
+    background-color: var(--color-surface);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+  }
+  .cart-shipping__title {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-4);
+  }
+  .cart-shipping__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .cart-shipping .account-form-page__field input {
+    background-color: var(--color-background);
+  }
+
+  .cart-summary {
+    background-color: var(--color-surface);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+  }
+
+  .cart-summary__note {
+    margin-top: 0;
+  }
+  .cart-summary__note label {
+    display: block;
+    margin-bottom: var(--space-2);
+  }
+  .cart-summary__note textarea {
+    width: 100%;
+    resize: vertical;
+  }
+
+  .cart-summary__subtotal {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+  .cart-summary__tax-note {
+    margin-top: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+  .cart-summary__checkout {
+    width: 100%;
+    margin-top: var(--space-5);
+  }
+
+  .cart-empty {
+    margin-top: var(--space-8);
+    text-align: center;
+    max-width: 28rem;
+    margin-inline: auto;
+  }
+  .cart-empty__title {
+    font-size: var(--font-size-md);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-6);
+  }
+{% endstylesheet %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('CartForm');
+    if (!form) return;
+
+    var subtotalEl = document.querySelector('[data-cart-subtotal]');
+
+    function moneyFormat(cents) {
+      return '₱' + (cents / 100).toFixed(2);
+    }
+
+    function changeItem(line, quantity) {
+      return fetch('/cart/change.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ line: line, quantity: quantity }),
+      }).then(function (response) {
+        return response.json();
+      });
+    }
+
+    /* Subtotal reflects only the checked items — "how many am I actually
+       about to buy" — falling back to the whole cart when nothing's
+       checked, since that's the more useful default before a shopper has
+       selected anything. */
+    function updateSubtotalDisplay() {
+      const checked = document.querySelectorAll('[data-cart-item-checkbox]:checked');
+      const lineEls =
+        checked.length > 0
+          ? Array.prototype.map.call(checked, function (checkbox) {
+              return checkbox.closest('[data-line-price]');
+            })
+          : document.querySelectorAll('.cart-items [data-line-price]');
+
+      let total = 0;
+      Array.prototype.forEach.call(lineEls, function (li) {
+        if (li) total += parseInt(li.getAttribute('data-line-price'), 10) || 0;
+      });
+
+      if (subtotalEl) subtotalEl.textContent = moneyFormat(total);
+    }
+
+    function updateFromCart(cart) {
+      if (window.BarakoCart) window.BarakoCart.updateHeaderCount(cart.item_count);
+
+      cart.items.forEach(function (item, index) {
+        const line = index + 1;
+        const li = document.querySelector('li.cart-item[data-line="' + line + '"]');
+        if (li) li.setAttribute('data-line-price', item.final_line_price);
+        const totalEl = document.querySelector('[data-line="' + line + '"] [data-cart-line-total]');
+        if (totalEl) totalEl.textContent = moneyFormat(item.final_line_price);
+        const qtyInput = document.querySelector('[data-cart-qty-input][data-line="' + line + '"]');
+        if (qtyInput) qtyInput.value = item.quantity;
+      });
+
+      updateSubtotalDisplay();
+
+      if (cart.item_count === 0) {
+        window.location.reload();
+      }
+    }
+
+    /* Removing a line renumbers every line after it, which the data-line
+       attributes already on the page don't reflect — a reload is simpler
+       and more correct than trying to patch stale line numbers in place.
+       A plain quantity change doesn't reorder anything, so that one stays
+       a fast in-place update. There's no separate "Update" button — every
+       quantity change (stepper click or typing a number directly) saves
+       immediately. */
+    function applyQuantity(line, quantity) {
+      if (quantity === 0) {
+        changeItem(line, 0).then(function () {
+          window.location.reload();
+        });
+      } else {
+        changeItem(line, quantity).then(updateFromCart);
+      }
+    }
+
+    document.querySelectorAll('[data-cart-qty-decrease], [data-cart-qty-increase]').forEach(function (control) {
+      control.addEventListener('click', function () {
+        const line = parseInt(control.getAttribute('data-line'), 10);
+        const input = document.querySelector('[data-cart-qty-input][data-line="' + line + '"]');
+        if (!input) return;
+
+        let quantity = parseInt(input.value, 10) || 0;
+        quantity = control.hasAttribute('data-cart-qty-decrease') ? Math.max(0, quantity - 1) : quantity + 1;
+        applyQuantity(line, quantity);
+      });
+    });
+
+    document.querySelectorAll('[data-cart-qty-input]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        const line = parseInt(input.getAttribute('data-line'), 10);
+        const quantity = Math.max(0, parseInt(input.value, 10) || 0);
+        applyQuantity(line, quantity);
+      });
+      /* With the "Update" button gone, "checkout" is the form's only
+         remaining submit control — pressing Enter here would otherwise
+         trigger it. Blur instead, which fires the change handler above. */
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          input.blur();
+        }
+      });
+    });
+
+    /* Same reasoning for the shipping fields (associated to the form via
+       the `form` attribute, not nested inside it) — Enter here should
+       just leave the field, not submit/checkout. */
+    document.querySelectorAll('.cart-shipping input').forEach(function (field) {
+      field.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') event.preventDefault();
+      });
+    });
+
+    function removeItemWithConfirm(line, productTitle) {
+      var confirmTitle = form.getAttribute('data-remove-item-title');
+      var confirmMessage = (form.getAttribute('data-remove-item-message') || '').replace('%%TITLE%%', productTitle);
+
+      var confirmed = window.BarakoConfirm
+        ? window.BarakoConfirm.show({
+            title: confirmTitle,
+            message: confirmMessage,
+            confirmLabel: form.getAttribute('data-remove-confirm-label'),
+            cancelLabel: form.getAttribute('data-cancel-label'),
+          })
+        : Promise.resolve(true);
+
+      confirmed.then(function (ok) {
+        if (!ok) return;
+
+        changeItem(line, 0).then(function () {
+          if (window.BarakoToast) {
+            var toastMessage = (form.getAttribute('data-item-removed-toast') || '').replace('%%TITLE%%', productTitle);
+            window.BarakoToast.showAfterReload(toastMessage, { title: form.getAttribute('data-item-removed-toast-title') });
+          }
+          window.location.reload();
+        });
+      });
+    }
+
+    document.querySelectorAll('[data-cart-remove]').forEach(function (control) {
+      control.addEventListener('click', function (event) {
+        event.preventDefault();
+        var line = parseInt(control.getAttribute('data-line'), 10);
+        var itemEl = control.closest('[data-product-title]');
+        var productTitle = itemEl ? itemEl.getAttribute('data-product-title') : '';
+        removeItemWithConfirm(line, productTitle);
+      });
+    });
+
+    var cartPage = document.getElementById('CartPage');
+    var editToggle = document.querySelector('[data-cart-edit-toggle]');
+    if (cartPage && editToggle) {
+      editToggle.addEventListener('click', function () {
+        var isEditing = cartPage.classList.toggle('is-editing');
+        editToggle.textContent = isEditing
+          ? editToggle.getAttribute('data-done-text')
+          : editToggle.getAttribute('data-edit-text');
+      });
+    }
+
+    var selectAll = document.querySelector('[data-cart-select-all]');
+    var itemCheckboxes = document.querySelectorAll('[data-cart-item-checkbox]');
+    var removeSelectedButton = document.querySelector('[data-cart-remove-selected]');
+    var selectedCountEl = document.querySelector('[data-cart-selected-count]');
+    var selectedCountTemplate = selectedCountEl ? selectedCountEl.textContent.trim() : '';
+
+    function refreshRemoveSelectedState() {
+      const checkedCount = Array.prototype.filter.call(itemCheckboxes, function (checkbox) {
+        return checkbox.checked;
+      }).length;
+
+      if (removeSelectedButton) removeSelectedButton.hidden = checkedCount === 0;
+
+      if (selectedCountEl) {
+        selectedCountEl.textContent = selectedCountTemplate.replace(/\d+/, String(checkedCount));
+      }
+
+      updateSubtotalDisplay();
+    }
+
+    if (selectAll) {
+      selectAll.addEventListener('change', function () {
+        itemCheckboxes.forEach(function (checkbox) {
+          checkbox.checked = selectAll.checked;
+        });
+        refreshRemoveSelectedState();
+      });
+    }
+
+    itemCheckboxes.forEach(function (checkbox) {
+      checkbox.addEventListener('change', function () {
+        if (!checkbox.checked && selectAll) selectAll.checked = false;
+        refreshRemoveSelectedState();
+      });
+    });
+
+    if (removeSelectedButton) {
+      removeSelectedButton.addEventListener('click', function () {
+        var lines = Array.prototype.filter
+          .call(itemCheckboxes, function (checkbox) {
+            return checkbox.checked;
+          })
+          .map(function (checkbox) {
+            return parseInt(checkbox.getAttribute('data-line'), 10);
+          });
+        if (lines.length === 0) return;
+
+        var count = lines.length;
+        var messageTemplate = form.getAttribute(count === 1 ? 'data-remove-selected-message-one' : 'data-remove-selected-message-other');
+        var confirmMessage = (messageTemplate || '').replace(/\d+/, String(count));
+
+        var confirmed = window.BarakoConfirm
+          ? window.BarakoConfirm.show({
+              title: form.getAttribute('data-remove-selected-title'),
+              message: confirmMessage,
+              confirmLabel: form.getAttribute('data-remove-confirm-label'),
+              cancelLabel: form.getAttribute('data-cancel-label'),
+            })
+          : Promise.resolve(true);
+
+        confirmed.then(function (ok) {
+          if (!ok) return;
+
+          removeSelectedButton.disabled = true;
+          /* Remove from the highest line number down, since removing a
+             lower line shifts every line after it — then reload, since
+             the resulting renumbering isn't safe to patch in place. */
+          lines
+            .sort(function (a, b) {
+              return b - a;
+            })
+            .reduce(function (chain, line) {
+              return chain.then(function () {
+                return changeItem(line, 0);
+              });
+            }, Promise.resolve())
+            .then(function () {
+              if (window.BarakoToast) {
+                var toastTemplate = form.getAttribute(count === 1 ? 'data-items-removed-toast-one' : 'data-items-removed-toast-other');
+                var toastMessage = (toastTemplate || '').replace(/\d+/, String(count));
+                window.BarakoToast.showAfterReload(toastMessage, { title: form.getAttribute('data-items-removed-toast-title') });
+              }
+              window.location.reload();
+            });
+        });
+      });
+    }
+
+    /* Checkout here is simulated rather than handed off to Shopify's real
+       checkout — this storefront's demo product data doesn't correspond
+       to real, purchasable variants, so a real checkout redirect just
+       fails with "Cannot find variant." Instead: ask for a payment
+       method, then clear the cart and land back here empty, like an
+       order had actually gone through. */
+    form.addEventListener('submit', function (event) {
+      var submitter = event.submitter;
+      if (submitter && submitter.name === 'checkout') {
+        event.preventDefault();
+
+        var dialogPromise = window.BarakoPaymentDialog ? window.BarakoPaymentDialog.show() : Promise.resolve('');
+        dialogPromise.then(function (method) {
+          if (method === null) return;
+
+          fetch('/cart/clear.js', {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+          }).then(function () {
+            if (window.BarakoToast) {
+              window.BarakoToast.showAfterReload(form.getAttribute('data-order-placed-toast'), {
+                title: form.getAttribute('data-order-placed-toast-title'),
+              });
+            }
+            window.location.reload();
+          });
+        });
+        return;
+      }
+      event.preventDefault();
+      var formData = new FormData(form);
+      fetch('/cart/update.js', {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: formData,
+      })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (cart) {
+          updateFromCart(cart);
+          if (window.BarakoToast) {
+            window.BarakoToast.show(form.getAttribute('data-updated-toast'));
+          }
+        });
+    });
+  });
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "t:general.main_cart",
+  "settings": []
+}
+{% endschema %}

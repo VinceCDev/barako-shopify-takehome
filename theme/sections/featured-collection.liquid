@@ -19,22 +19,7 @@
   {% if section.settings.collection != blank %}
     <div class="featured-collection__grid">
       {% for product in section.settings.collection.products limit: section.settings.products_to_show %}
-        <a href="{{ product.url }}" class="featured-collection__card">
-          {% if product.featured_image %}
-            <div class="featured-collection__image-wrap hover-zoom">
-              {% render 'image',
-                class: 'featured-collection__image',
-                image: product.featured_image,
-                url: nil,
-                width: 600,
-                height: 750,
-                crop: 'center'
-              %}
-            </div>
-          {% endif %}
-          <span class="featured-collection__title">{{ product.title }}</span>
-          <span class="featured-collection__price">{{ product.price | money }}</span>
-        </a>
+        {% render 'product-card', product: product, image_sizes: '(min-width: 48rem) 25vw, 50vw' %}
       {% endfor %}
     </div>
   {% endif %}
@@ -52,7 +37,7 @@
     flex-wrap: wrap;
     gap: var(--space-4);
     margin-bottom: var(--space-8);
-    padding-bottom: var(--space-5);
+    padding-bottom: var(--space-3);
     border-bottom: 1px solid var(--color-border);
   }
 
@@ -71,27 +56,6 @@
     }
   }
 
-  .featured-collection__card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    color: var(--color-text);
-    text-decoration: none;
-  }
-
-  .featured-collection__image-wrap {
-    aspect-ratio: 4 / 5;
-    background-color: var(--color-surface);
-  }
-
-  .featured-collection__title {
-    font-size: var(--font-size-sm);
-  }
-
-  .featured-collection__price {
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-  }
 {% endstylesheet %}
 
 {% schema %}

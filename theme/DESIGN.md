@@ -142,11 +142,12 @@ verbatim CSS ruleset that doesn't fit both mechanics.
 
 ## Shape, radius, motion
 
-Square to near-square only: `--radius-sm: 0px` (buttons, inputs),
-`--radius-md: 2px` (images, cards). No pill shapes anywhere — the cart
-count is plain `(2)` text and the flavor scales are five small squares,
-specifically because a circle/pill was the only way either had been
-implemented before this pass.
+Softly rounded: `--radius-sm: 8px` (buttons, inputs, chips), `--radius-md:
+14px` (images, cards, panel containers), `--radius-full: 999px` (icon-only
+buttons, the cart's Edit/Done toggle). Applied to every card/panel surface
+(product cards, cart items, cart summary/shipping panels, the quick-view
+modal, contact info cards) and to form controls via
+`--style-border-radius-inputs`.
 
 `--transition-fast: 200ms` (hover states — underline offset, color) and
 `--transition-image: transform 600ms cubic-bezier(0.4, 0, 0.2, 1)` (the
@@ -271,3 +272,119 @@ individual components never need their own reduced-motion query.
   weight to hold its own against the photo. "Shop this origin" gained an
   arrow icon (a new `arrow-right` entry in `snippets/icon.liquid`) and
   already had its 44px tap target from the shared `.text-link` rule.
+
+## Phase 4: core pages
+
+The three templates that were still stock Skeleton content (`product`,
+`collection`, `cart`) are now `main-product`, `main-collection`,
+`main-cart` — the old stock sections were deleted once nothing referenced
+them, rather than left orphaned. New shared pieces:
+
+- **`snippets/product-card.liquid`** — the one product-card
+  implementation, used by `featured-collection`, `main-collection`, and
+  `product-recommendations`. It's a "stretched link" card: only the
+  title text is a real `<a>`, expanded to cover the whole card via
+  `::after`, so the link's accessible name stays just the product title
+  instead of also reading out the price and meta line. The meta line
+  (roast level · first two flavor notes) is plain text — no pills, same
+  rule as `flavor-profile`. Handles compare-at (strikethrough, not
+  color-only), sold out, and `price_varies` ("From ₱X").
+- **`.qty-stepper`** (in `critical.css`) — one quantity control, used on
+  both the product and cart pages. The −/+ buttons are `type="button"`
+  (inert without JS) and purely a JS enhancement; the number input itself
+  is always directly typable, which is what actually guarantees the form
+  works with JS disabled — hiding the native spinner arrows for custom
+  styling would otherwise remove the only way to change the value.
+- **`.js` / `.no-js`** (`<html>` class, flipped by a one-line inline
+  script in `theme.liquid` before first paint) plus the `.js-only`
+  utility — used once, for the product page's Grind picker. Rectangular
+  radio buttons need JS to keep a hidden `id` field in sync with
+  whichever option is selected; without that sync, clicking a radio
+  would silently add the wrong variant to the cart. So the radios are
+  `.js-only`, and a `<noscript>` block renders the classic `<select
+  name="id">` fallback instead — never both at once, so a no-JS visitor
+  never sees two controls that disagree with each other.
+- **Product gallery** — thumbnails are plain `<a href="#Slide-N">` links
+  into a `scroll-snap-type: x` track. No JS at all: native anchor
+  scrolling is what moves the main image, and it's keyboard-accessible
+  for free because it's just links.
+- **Product recommendations** — `product-recommendations.liquid` always
+  server-renders a same-collection fallback first (works with JS off).
+  Its own `{% javascript %}` block then requests itself again through
+  Shopify's `/recommendations/products` endpoint and swaps in the
+  algorithm-picked set if one comes back; on any failure, the fallback
+  that's already on the page is simply left alone.
+- **Collection filters/sort** — native storefront filtering
+  (`collection.filters`), a plain GET form, fully functional with JS off.
+  The submit button is only ever hidden by JS after it actually attaches
+  the auto-submit listener (never by CSS alone), so a no-JS visitor at
+  any viewport always has a visible way to apply filters or change sort —
+  an earlier draft of this pass hid the filter button via a desktop media
+  query, which would have broken the no-JS path specifically on wide
+  screens; caught and fixed before shipping.
+
+Ran `shopify theme check` after every file in this phase; it caught a
+real `LiquidSyntaxError` in `theme.liquid` from using the `{% # %}`
+single-line comment shorthand across multiple lines (it requires every
+line to start with `#`) — fixed by switching those two comments to
+`{% comment %}...{% endcomment %}`.
+
+## Round 3: brand logo, quick-view simplification, search results, cart rebuild
+
+- **Logo & favicon** — `settings_schema.json` gained a
+  `t:general.branding` section with a `favicon` `image_picker`; the
+  header logo is a `header.liquid` block/section setting
+  (`section.settings.logo`), and both fall back to the theme's bundled
+  `assets/logo.png` (the store's own verified brand asset, not a
+  competitor's) when unset. `theme.liquid`'s `<link rel="icon">` is
+  computed from `settings.favicon` first, bundled logo second.
+- **Quick-view modal** — deliberately minimal: image, title, price,
+  description, Add to Cart, Add to Favorites. No variant picker and no
+  quantity stepper — the modal always adds `product.variants[0]` at
+  qty 1 and redirects to `cart_url` on success, rather than trying to
+  replicate the full PDP inline. Centered with explicit
+  `position:fixed; top/left:50%; transform:translate(-50%,-50%)` rather
+  than relying on the UA's default `dialog:modal` centering, which
+  wasn't reliably applied. Its product image comes from the same
+  bundled-fallback pattern as everywhere else: Shopify's real
+  `{{ product.url }}.js` JSON has no knowledge of theme-bundled images,
+  so the fallback URL is computed server-side in Liquid and passed
+  through a `data-fallback-image` attribute for the JS to use if the
+  real product image is blank.
+- **Favorites** — `favorites.js` now exposes a `window.BarakoFavorites`
+  API (`isFavorited`, `toggle`, `applyState`) so both the static
+  per-card favorite buttons and the quick-view modal's favorite button
+  (which isn't part of any single product card's markup) read and write
+  the same `localStorage`-backed state.
+- **Search results** — `main-search.liquid` replaced the stock bare-link
+  results list with the same `product-card` grid and pagination snippet
+  used on collection pages, so search results look and behave like the
+  rest of the catalog rather than a degraded fallback view.
+- **Cart page rebuild** — restructured to match a specific reference
+  layout after several rounds of feedback:
+  - The free-shipping progress bar (markup, CSS, JS, and the
+    `free_shipping_threshold` setting) was removed entirely — cart pages
+    no longer make any promise about a shipping threshold.
+  - "Select all" and "Edit" live together in a `.cart-items__toolbar`
+    row inside the cart-items panel itself (not in the page header above
+    Shipping Details), so header now only ever holds the page title and
+    item count.
+  - A live `.cart-items__selected-count` span (`cart.items_selected`,
+    pluralized) updates via JS on every checkbox change, reusing the
+    same handler that already toggled the "remove selected" button's
+    disabled state.
+  - A "Shipping Details" panel (First/Last name, Address, Mobile, City,
+    ZIP) sits beside Order Summary as native cart attributes
+    (`attributes[Key Name]`, `form="CartForm"`), independent of the
+    checkbox/edit-mode UI.
+  - Per-item checkboxes get their own grid column only in edit mode
+    (`#CartPage.is-editing`); the checkbox's negative margin that had
+    been pulling it tight against the thumbnail was removed once it made
+    the two elements read as "too cramped" against the reference layout.
+  - Spacing was tightened throughout (`cart-page__layout` gap,
+    `cart-item` padding-block, `cart-shipping`/`cart-summary` padding)
+    to read as denser, matching the reference screenshot instead of the
+    airier original draft.
+
+`shopify theme check` run again after this round: 59 files inspected,
+no offenses.

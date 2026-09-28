@@ -278,6 +278,60 @@ label {
   border: 0;
 }
 
+/* Progressive enhancement: some UI (the product variant picker) only
+   makes sense once JS can keep it in sync with a hidden form field, so
+   it stays hidden until layout/theme.liquid's tiny inline script flips
+   <html> from .no-js to .js. Everything else on every page works fully
+   without JS; this pair exists for the few spots that specifically
+   trade a nicer control for one that needs JS to stay correct. */
+.js-only {
+  display: none;
+}
+.js .js-only {
+  display: block;
+}
+
+/* A quantity input with -/+ buttons, shared by the product and cart
+   pages. The buttons are a JS-free enhancement over the plain number
+   input: without JS they're just extra buttons that submit the form
+   (type="submit" is set by the consumer where that's wanted); with JS
+   they increment/decrement in place. */
+.qty-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.qty-stepper__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+}
+.qty-stepper__button svg {
+  width: 1rem;
+}
+.qty-stepper__input {
+  width: 3rem;
+  min-height: 2.75rem;
+  border: none;
+  border-inline: 1px solid var(--color-border);
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.qty-stepper__input::-webkit-outer-spin-button,
+.qty-stepper__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* Editorial 12-column grid, used for precise asymmetric layouts
    (origin story rows, etc). Falls back to a simple stack on mobile. */
 .grid-12 {
@@ -338,4 +392,105 @@ label {
 /* Child elements that use the full-width utility class span the entire viewport. */
 .shopify-section > .full-width {
   grid-column: 1 / -1;
+}
+
+/* Shared by the four classic customer-account pages (login, register,
+   account, reset password) — one component, not duplicated per section,
+   since {% stylesheet %} is scoped per section type and can't be shared
+   between them otherwise. */
+.account-form-page {
+  padding-block: var(--section-padding);
+  display: flex;
+  justify-content: center;
+}
+.account-form-page__inner {
+  width: 100%;
+  max-width: 26rem;
+}
+.account-form-page--wide .account-form-page__inner {
+  max-width: 48rem;
+}
+.account-form-page__title {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--space-7);
+  text-align: center;
+}
+.account-form-page__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.account-form-page__field {
+  margin-bottom: var(--space-5);
+}
+.account-form-page__field label {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+.account-form-page__field input {
+  width: 100%;
+  min-height: 2.75rem;
+}
+.account-form-page__error {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+.account-form-page__success {
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+}
+.account-form-page__submit {
+  width: 100%;
+}
+.account-form-page__recover {
+  margin-top: var(--space-6);
+  text-align: center;
+}
+.account-form-page__recover-panel {
+  margin-top: var(--space-5);
+  text-align: left;
+}
+.account-form-page__switch {
+  margin-top: var(--space-7);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Shared pagination component — used by the collection grid and search
+   results, both of which need it (and, per the note above, section
+   stylesheets can't be shared between files any other way). */
+.collection-pagination {
+  padding-bottom: var(--section-padding);
+}
+.collection-pagination__list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.collection-pagination__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-decoration: none;
+}
+.collection-pagination__link svg {
+  width: 1.125rem;
+}
+.collection-pagination__link--current {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }

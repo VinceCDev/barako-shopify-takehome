@@ -1,0 +1,46 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-page-contact",
+      "blocks": {
+        "visit": {
+          "type": "info",
+          "settings": {
+            "icon": "map-pin",
+            "label": "Visit us",
+            "value": "<p>123 Batangas Road, Batangas City, Philippines</p>"
+          }
+        },
+        "call": {
+          "type": "info",
+          "settings": {
+            "icon": "phone",
+            "label": "Call us",
+            "value": "<p>+63 900 000 0000</p>"
+          }
+        },
+        "email": {
+          "type": "info",
+          "settings": {
+            "icon": "mail",
+            "label": "Email us",
+            "value": "<p>hello@barakoandco.ph</p>"
+          }
+        },
+        "hours": {
+          "type": "info",
+          "settings": {
+            "icon": "clock",
+            "label": "Hours",
+            "value": "<p>Mon&ndash;Sat, 8am&ndash;5pm</p>"
+          }
+        }
+      },
+      "block_order": ["visit", "call", "email", "hours"],
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

@@ -1,0 +1,100 @@
+{% doc %}
+  Simple breadcrumb trail: a home icon, an optional collection, and the
+  current page — lets shoppers navigate back to the collection they came
+  from instead of relying on the browser's back button.
+
+  @param {product} [product] - current product, if on a product page
+  @param {collection} [collection] - current collection, if on a
+    collection page, or the collection to link through on a product page
+    (defaults to the product's first collection when omitted)
+  @param {string} [current_title] - label for the current page when
+    there's no product/collection object to pull a title from
+
+  @example
+  {% render 'breadcrumbs', product: product, collection: collection %}
+  {% render 'breadcrumbs', collection: collection %}
+{% enddoc %}
+
+{% liquid
+  assign crumb_collection = collection
+  if product and crumb_collection == blank
+    assign crumb_collection = product.collections.first
+  endif
+
+  assign current_label = current_title
+  if product
+    assign current_label = product.title
+  elsif collection
+    assign current_label = collection.title
+  endif
+%}
+
+<nav class="breadcrumbs" aria-label="{{ 'general.breadcrumbs' | t }}">
+  <ol class="breadcrumbs__list">
+    <li class="breadcrumbs__item">
+      <a href="{{ routes.root_url }}" class="breadcrumbs__home" aria-label="{{ 'general.breadcrumbs_home' | t }}">
+        {% render 'icon', name: 'home' %}
+      </a>
+    </li>
+    {% if product and crumb_collection %}
+      <li class="breadcrumbs__separator" aria-hidden="true">{% render 'icon', name: 'chevron-right' %}</li>
+      <li class="breadcrumbs__item">
+        <a href="{{ crumb_collection.url }}">{{ crumb_collection.title }}</a>
+      </li>
+    {% endif %}
+    {% if current_label != blank %}
+      <li class="breadcrumbs__separator" aria-hidden="true">{% render 'icon', name: 'chevron-right' %}</li>
+      <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">
+        {{ current_label }}
+      </li>
+    {% endif %}
+  </ol>
+</nav>
+
+{% stylesheet %}
+  .breadcrumbs__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+  .breadcrumbs__item {
+    display: flex;
+    align-items: center;
+    max-width: 20rem;
+  }
+  .breadcrumbs__item a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+  .breadcrumbs__item a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .breadcrumbs__home {
+    display: inline-flex;
+  }
+  .breadcrumbs__home svg {
+    width: 1.125rem;
+  }
+  .breadcrumbs__separator {
+    display: inline-flex;
+    color: var(--color-border);
+  }
+  .breadcrumbs__separator svg {
+    width: 0.875rem;
+  }
+  .breadcrumbs__item--current {
+    overflow: hidden;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+{% endstylesheet %}

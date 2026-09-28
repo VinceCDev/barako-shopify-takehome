@@ -8,6 +8,17 @@
     "theme_support_url": "https://support.shopify.com/"
   },
   {
+    "name": "t:general.branding",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "t:labels.favicon",
+        "info": "t:labels.favicon_info"
+      }
+    ]
+  },
+  {
     "name": "t:general.typography",
     "settings": [
       {
@@ -63,6 +74,23 @@
     ]
   },
   {
+    "name": "t:general.products",
+    "settings": [
+      {
+        "type": "collection",
+        "id": "coffee_collection",
+        "label": "t:labels.coffee_collection",
+        "info": "t:labels.coffee_collection_info"
+      },
+      {
+        "type": "collection",
+        "id": "brewing_gear_collection",
+        "label": "t:labels.brewing_gear_collection",
+        "info": "t:labels.brewing_gear_collection_info"
+      }
+    ]
+  },
+  {
     "name": "t:general.layout",
     "settings": [
       {
@@ -99,7 +127,7 @@
         "step": 1,
         "unit": "px",
         "label": "t:labels.input_corner_radius",
-        "default": 0
+        "default": 8
       }
     ]
   }

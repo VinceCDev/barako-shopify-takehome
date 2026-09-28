@@ -10,8 +10,11 @@
 {
   "sections": {
     "main": {
-      "type": "cart",
-      "settings": {}
+      "type": "main-cart",
+      "settings": {
+        "free_shipping_threshold": 1500,
+        "coffee_collection": "coffee"
+      }
     }
   },
   "order": [
