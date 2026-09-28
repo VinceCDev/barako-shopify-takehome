@@ -1,0 +1,18 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "f4bad4fdd88d970f533e5d2c70ac31a0"
+name = "Barako Merchant Tools"
+application_url = "https://unreal-composed-strep.ngrok-free.dev"
+embedded = true
+
+[webhooks]
+api_version = "2026-07"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,read_orders,read_customers"
+use_legacy_install_flow = false
+optional_scopes = [ ]
+
+[auth]
+redirect_urls = [ "https://unreal-composed-strep.ngrok-free.dev/api/auth/callback" ]

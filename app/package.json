@@ -1,0 +1,14 @@
+{
+  "name": "barako-merchant-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Embedded Shopify admin app for Barako & Co. — inventory reorder alerts, customer loyalty scoring, and order fulfillment prioritization.",
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
+    "db:generate": "npm run db:generate --prefix server",
+    "db:migrate": "npm run db:migrate --prefix server"
+  }
+}
