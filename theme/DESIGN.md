@@ -178,8 +178,8 @@ individual components never need their own reduced-motion query.
 5. **Repetition** — one spacing scale, one type scale, one `.button`, one
    `.text-link`, one hairline (`--color-border`) — audited by grep before
    calling this done: zero hardcoded px values for spacing/type in any
-   active section (the only hardcoded values left live in the unused
-   stock `hello-world.liquid` demo section, which nothing renders).
+   active section. (The unused stock `hello-world.liquid`/`custom-section.liquid`
+   demo sections, which nothing rendered, have since been deleted.)
 6. **Proportion** — the type scale above; fixed aspect ratios via CSS
    (`aspect-ratio: 4/5` for origin and product images, the hero is
    full-bleed `100vh`/`80vh`), each paired with `object-fit: cover` and,

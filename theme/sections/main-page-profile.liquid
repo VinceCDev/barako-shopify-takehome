@@ -17,28 +17,28 @@
         </button>
       </div>
 
-      <div class="account-profile__details">
+      <dl class="account-profile__details">
         <div class="account-profile__field">
-          <span class="account-profile__label">{{ 'customers.account.name' | t }}</span>
-          <p class="account-profile__value">
+          <dt class="account-profile__label">{{ 'customers.account.name' | t }}</dt>
+          <dd class="account-profile__value">
             {% if customer.name != blank %}
               {{ customer.name }}
             {% else %}
               {{ 'customers.account.no_name' | t }}
             {% endif %}
-          </p>
+          </dd>
         </div>
         <div class="account-profile__field">
-          <span class="account-profile__label">{{ 'customers.account.email' | t }}</span>
-          <p class="account-profile__value">{{ customer.email }}</p>
+          <dt class="account-profile__label">{{ 'customers.account.email' | t }}</dt>
+          <dd class="account-profile__value">{{ customer.email }}</dd>
         </div>
         {% if customer.default_address %}
           <div class="account-profile__field">
-            <span class="account-profile__label">{{ 'customers.account.address' | t }}</span>
-            <p class="account-profile__value">{{ customer.default_address | format_address }}</p>
+            <dt class="account-profile__label">{{ 'customers.account.address' | t }}</dt>
+            <dd class="account-profile__value">{{ customer.default_address | format_address }}</dd>
           </div>
         {% endif %}
-      </div>
+      </dl>
 
       <h2 class="account-dashboard__subheading">{{ 'customers.account.orders_title' | t }}</h2>
 

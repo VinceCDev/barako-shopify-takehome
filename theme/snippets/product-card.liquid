@@ -57,12 +57,16 @@
   assign short_description = product.description | strip_html | truncatewords: 14
 
   assign coffee_fallback_url = ''
-  if product.type == 'Coffee'
+  if product.type == 'Coffee' or product.type == 'Gear'
     assign coffee_fallback_url = 'product-' | append: product.handle | append: '.jpg' | asset_url
   endif
 %}
 
-<article class="product-card" data-product-title="{{ product.title | escape }}">
+<article
+  class="product-card"
+  data-product-title="{{ product.title | escape }}"
+  data-product-rating="{{ rating_value }}"
+>
   <div class="product-card__media" data-fallback-src="{{ coffee_fallback_url }}">
     <button
       type="button"
@@ -117,14 +121,14 @@
         %}
         {{ secondary_tag }}
       {% endif %}
-    {% elsif product.type == 'Coffee' %}
+    {% elsif coffee_fallback_url != blank %}
       {% comment %}
         No merchant image picked yet: fall back to a bundled photo
         matching this product's handle (assets/product-<handle>.jpg),
         same pattern as the homepage's hero/origin/step fallbacks.
       {% endcomment %}
       <img
-        src="{{ 'product-' | append: product.handle | append: '.jpg' | asset_url }}"
+        src="{{ coffee_fallback_url }}"
         alt=""
         width="800"
         height="1000"

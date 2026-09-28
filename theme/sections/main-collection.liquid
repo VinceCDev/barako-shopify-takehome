@@ -13,89 +13,87 @@
 
 {% paginate collection.products by 24 %}
   {% liquid
-    assign has_active_filters = false
+    # Price gets its own dropdown, separate from the catch-all "Filters"
+    # disclosure, so the toolbar reads as distinct Price / Rating / Sort
+    # controls rather than one generic bucket.
+    assign price_filter = null
+    assign other_filters_count = 0
+    assign has_active_price_filter = false
+    assign has_active_other_filters = false
+
     for filter in collection.filters
-      if filter.min_value.value != blank or filter.max_value.value != blank
-        assign has_active_filters = true
-      endif
-      for value in filter.values
-        if value.active
-          assign has_active_filters = true
+      if filter.type == 'price_range'
+        assign price_filter = filter
+        if filter.min_value.value != blank or filter.max_value.value != blank
+          assign has_active_price_filter = true
         endif
-      endfor
+      else
+        assign other_filters_count = other_filters_count | plus: 1
+        for value in filter.values
+          if value.active
+            assign has_active_other_filters = true
+          endif
+        endfor
+      endif
     endfor
   %}
 
   <div class="collection-toolbar wrap">
     <div class="collection-toolbar__start">
-    {% if collection.filters.size > 0 %}
-      <details class="collection-filters" id="CollectionFiltersDrawer">
+      {% render 'search-bar', id: 'CollectionSearch', mode: 'collection' %}
+    </div>
+
+    <div class="collection-toolbar__end">
+    {% if price_filter %}
+      <details class="collection-filters" id="CollectionPriceDrawer">
         <summary class="collection-filters__toggle">
-          {% render 'icon', name: 'filter' %}
-          {{ 'collection.filters' | t }}
+          <span>{{ 'collection.price' | t }}</span>
+          {% render 'icon', name: 'chevron-down' %}
         </summary>
 
         <div class="collection-filters__panel">
-          <form id="CollectionFiltersForm" method="get" action="{{ collection.url }}">
+          <form id="CollectionPriceForm" method="get" action="{{ collection.url }}">
+            {% comment %} Preserve the other filters' active state. {% endcomment %}
             {% for filter in collection.filters %}
-              <fieldset class="collection-filter">
-                <legend class="collection-filter__legend">{{ filter.label }}</legend>
-
-                {% case filter.type %}
-                  {% when 'price_range' %}
-                    <div class="collection-filter__price-range">
-                      <label class="visually-hidden" for="FilterPriceMin-{{ forloop.index }}">
-                        {{ filter.min_value.param_name }}
-                      </label>
-                      <input
-                        type="number"
-                        id="FilterPriceMin-{{ forloop.index }}"
-                        name="{{ filter.min_value.param_name }}"
-                        placeholder="{{ filter.range_min | money_without_currency }}"
-                        value="{{ filter.min_value.value }}"
-                        min="0"
-                      >
-                      <span aria-hidden="true">&ndash;</span>
-                      <label class="visually-hidden" for="FilterPriceMax-{{ forloop.index }}">
-                        {{ filter.max_value.param_name }}
-                      </label>
-                      <input
-                        type="number"
-                        id="FilterPriceMax-{{ forloop.index }}"
-                        name="{{ filter.max_value.param_name }}"
-                        placeholder="{{ filter.range_max | money_without_currency }}"
-                        value="{{ filter.max_value.value }}"
-                        min="0"
-                      >
-                    </div>
-                  {% else %}
-                    <div class="collection-filter__options">
-                      {% for value in filter.values %}
-                        {% assign option_disabled = false %}
-                        {% if value.count == 0 and value.active == false %}
-                          {% assign option_disabled = true %}
-                        {% endif %}
-                        <label class="collection-filter__option{% if option_disabled %} collection-filter__option--disabled{% endif %}">
-                          <input
-                            type="checkbox"
-                            name="{{ value.param_name }}"
-                            value="{{ value.value }}"
-                            {% if value.active %}checked{% endif %}
-                            {% if option_disabled %}disabled{% endif %}
-                          >
-                          <span>{{ value.label }} ({{ value.count }})</span>
-                        </label>
-                      {% endfor %}
-                    </div>
-                {% endcase %}
-              </fieldset>
+              {% unless filter.type == 'price_range' %}
+                {% for value in filter.values %}
+                  {% if value.active %}
+                    <input type="hidden" name="{{ value.param_name }}" value="{{ value.value }}">
+                  {% endif %}
+                {% endfor %}
+              {% endunless %}
             {% endfor %}
+
+            <fieldset class="collection-filter">
+              <legend class="collection-filter__legend">{{ price_filter.label }}</legend>
+              <div class="collection-filter__price-range">
+                <label class="visually-hidden" for="FilterPriceMin">{{ price_filter.min_value.param_name }}</label>
+                <input
+                  type="number"
+                  id="FilterPriceMin"
+                  name="{{ price_filter.min_value.param_name }}"
+                  placeholder="{{ price_filter.range_min | money_without_currency }}"
+                  value="{{ price_filter.min_value.value }}"
+                  min="0"
+                >
+                <span aria-hidden="true">&ndash;</span>
+                <label class="visually-hidden" for="FilterPriceMax">{{ price_filter.max_value.param_name }}</label>
+                <input
+                  type="number"
+                  id="FilterPriceMax"
+                  name="{{ price_filter.max_value.param_name }}"
+                  placeholder="{{ price_filter.range_max | money_without_currency }}"
+                  value="{{ price_filter.max_value.value }}"
+                  min="0"
+                >
+              </div>
+            </fieldset>
 
             <div class="collection-filter__actions">
               <button type="submit" class="button" data-filter-submit>
                 {{ 'collection.apply_filters' | t }}
               </button>
-              {% if has_active_filters %}
+              {% if has_active_price_filter %}
                 <a href="{{ collection.url }}" class="text-link">{{ 'collection.clear_filters' | t }}</a>
               {% endif %}
             </div>
@@ -104,35 +102,95 @@
       </details>
     {% endif %}
 
-    {% render 'search-bar', id: 'CollectionSearch', mode: 'collection' %}
+    {% if other_filters_count > 0 %}
+      <details class="collection-filters" id="CollectionFiltersDrawer">
+        <summary class="collection-filters__toggle">
+          <span>{{ 'collection.filters' | t }}</span>
+          {% render 'icon', name: 'chevron-down' %}
+        </summary>
+
+        <div class="collection-filters__panel">
+          <form id="CollectionFiltersForm" method="get" action="{{ collection.url }}">
+            {% comment %} Preserve the price filter's active state. {% endcomment %}
+            {% if price_filter %}
+              {% if price_filter.min_value.value != blank %}
+                <input type="hidden" name="{{ price_filter.min_value.param_name }}" value="{{ price_filter.min_value.value }}">
+              {% endif %}
+              {% if price_filter.max_value.value != blank %}
+                <input type="hidden" name="{{ price_filter.max_value.param_name }}" value="{{ price_filter.max_value.value }}">
+              {% endif %}
+            {% endif %}
+
+            {% for filter in collection.filters %}
+              {% unless filter.type == 'price_range' %}
+                <fieldset class="collection-filter">
+                  <legend class="collection-filter__legend">{{ filter.label }}</legend>
+                  <div class="collection-filter__options">
+                    {% for value in filter.values %}
+                      {% assign option_disabled = false %}
+                      {% if value.count == 0 and value.active == false %}
+                        {% assign option_disabled = true %}
+                      {% endif %}
+                      <label class="collection-filter__option{% if option_disabled %} collection-filter__option--disabled{% endif %}">
+                        <input
+                          type="checkbox"
+                          name="{{ value.param_name }}"
+                          value="{{ value.value }}"
+                          {% if value.active %}checked{% endif %}
+                          {% if option_disabled %}disabled{% endif %}
+                        >
+                        <span>{{ value.label }} ({{ value.count }})</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                </fieldset>
+              {% endunless %}
+            {% endfor %}
+
+            <div class="collection-filter__actions">
+              <button type="submit" class="button" data-filter-submit>
+                {{ 'collection.apply_filters' | t }}
+              </button>
+              {% if has_active_other_filters %}
+                <a href="{{ collection.url }}" class="text-link">{{ 'collection.clear_filters' | t }}</a>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </details>
+    {% endif %}
+
+    {% comment %}
+      Client-side, like the search filter — rating isn't a native Shopify
+      filter (it's a plain custom metafield, not one exposed via the
+      Search & Discovery app), so this just shows/hides the already
+      -rendered cards rather than reloading the page.
+    {% endcomment %}
+    <details class="collection-filters" id="CollectionRatingDrawer">
+      <summary class="collection-filters__toggle">
+        <span>{{ 'collection.rating_filter' | t }}</span>
+        {% render 'icon', name: 'chevron-down' %}
+      </summary>
+
+      <div class="collection-filters__panel">
+        <fieldset class="collection-filter">
+          <legend class="collection-filter__legend">{{ 'collection.rating_filter' | t }}</legend>
+          <div class="collection-filter__options" data-rating-filter>
+            <label class="collection-filter__option">
+              <input type="radio" name="rating_filter_choice" value="" data-rating-filter-input checked>
+              <span>{{ 'collection.rating_any' | t }}</span>
+            </label>
+            {% for threshold in (1..4) reversed %}
+              <label class="collection-filter__option">
+                <input type="radio" name="rating_filter_choice" value="{{ threshold }}" data-rating-filter-input>
+                <span>{{ 'collection.rating_and_up' | t: rating: threshold }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+    </details>
     </div>
-
-    <form id="CollectionSortForm" method="get" action="{{ collection.url }}" class="collection-sort">
-      {% comment %} Preserve active filters when the sort order changes. {% endcomment %}
-      {% for filter in collection.filters %}
-        {% if filter.min_value.value != blank %}
-          <input type="hidden" name="{{ filter.min_value.param_name }}" value="{{ filter.min_value.value }}">
-        {% endif %}
-        {% if filter.max_value.value != blank %}
-          <input type="hidden" name="{{ filter.max_value.param_name }}" value="{{ filter.max_value.value }}">
-        {% endif %}
-        {% for value in filter.values %}
-          {% if value.active %}
-            <input type="hidden" name="{{ value.param_name }}" value="{{ value.value }}">
-          {% endif %}
-        {% endfor %}
-      {% endfor %}
-
-      <label for="SortBy" class="collection-sort__label">{{ 'collection.sort_by' | t }}</label>
-      <select id="SortBy" name="sort_by" class="collection-sort__select">
-        {% for option in collection.sort_options %}
-          <option value="{{ option.value }}" {% if option.value == collection.sort_by %}selected{% endif %}>
-            {{ option.name }}
-          </option>
-        {% endfor %}
-      </select>
-      <button type="submit" class="button" data-sort-submit>{{ 'collection.sort_by' | t }}</button>
-    </form>
   </div>
 
   {% if collection.products.size > 0 %}
@@ -211,14 +269,19 @@
     margin-bottom: var(--space-6);
     border-bottom: 1px solid var(--color-border);
   }
-  /* Filters + search grouped together on the left; sort stays on the
-     right. Keeps search anchored next to the filter control instead of
-     drifting to the middle of the toolbar. */
+  /* Search stays on the left; Price/Filters/Rating and Sort group
+     together at the right end of the toolbar. */
   .collection-toolbar__start {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--space-4);
+  }
+  .collection-toolbar__end {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
   }
 
   .collection-toolbar__start .search-bar {
@@ -226,30 +289,67 @@
     max-width: 22rem;
   }
 
-  /* Filters: a <details> disclosure on mobile, same zero-JS pattern as
-     the header nav; forced open as a plain bar at desktop. */
+  /* Mobile: search gets its own full-width row (a compact search box
+     reads as cramped) — the Price/Filters/Rating pills and Sort stay
+     compact and wrap as their own row together, matching the pill-style
+     dropdown look rather than a stacked list. Comes after the base rules
+     above so it wins the cascade at equal specificity, and resets `flex`
+     in full — leaving a stale flex-basis (meant for a horizontal row) in
+     place would size the item's HEIGHT instead once a parent becomes
+     flex-direction: column. */
+  @media (max-width: 47.99rem) {
+    .collection-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .collection-toolbar__start .search-bar {
+      flex: none;
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  /* Filters: a <details> disclosure, styled to read as a plain dropdown
+     select (rounded box, label, trailing chevron) rather than an
+     accordion-style toggle, so Price/Filters/Rating sit next to Sort as
+     one visually consistent row of controls. */
   .collection-filters__toggle {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    min-height: 2.75rem;
-    padding-inline: var(--space-3);
-    margin-inline-start: calc(var(--space-3) * -1);
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-width: 9rem;
+    height: 2.75rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-background);
     cursor: pointer;
     list-style: none;
-    font-size: var(--font-size-xs);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-label);
+    font-size: var(--font-size-sm);
+  }
+  .collection-filters[open] > .collection-filters__toggle {
+    border-color: var(--color-primary);
   }
   .collection-filters__toggle::-webkit-details-marker {
     display: none;
   }
   .collection-filters__toggle svg {
     width: 1.125rem;
+    flex: 0 0 auto;
+    color: var(--color-text-muted);
   }
   .collection-filters__panel {
     display: none;
-    padding-top: var(--space-5);
+    position: absolute;
+    z-index: 20;
+    margin-top: var(--space-2);
+    padding: var(--space-5);
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+    min-width: 16rem;
   }
   .collection-filters[open] .collection-filters__panel {
     display: block;
@@ -299,55 +399,28 @@
     margin-top: var(--space-6);
   }
 
-  .collection-sort {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+  /* These submit buttons only matter without JS (auto-submit takes over
+     once JS is active) — hiding them via CSS off the .js/.no-js class
+     already flipped before first paint avoids the flash a JS-timed
+     .hidden = true would otherwise risk. */
+  [data-filter-submit] {
+    display: none;
   }
-  .collection-sort__label {
-    font-size: var(--font-size-xs);
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-label);
-    color: var(--color-text-muted);
-  }
-  .collection-sort__select {
-    min-height: 2.75rem;
+  .no-js [data-filter-submit] {
+    display: inline-flex;
   }
 
-  @media (min-width: 64rem) {
-    .collection-filters__toggle {
-      display: none;
-    }
-    .collection-filters__panel {
-      display: block;
-    }
-    .collection-toolbar {
-      align-items: center;
-    }
-    .collection-toolbar__start {
-      align-items: center;
-    }
-    .collection-filters__panel {
-      padding-top: 0;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: var(--space-6);
-    }
-    .collection-filter {
-      margin-bottom: 0;
-    }
-    .collection-filter__legend {
-      margin-bottom: var(--space-2);
-    }
-    .collection-filter__options {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: var(--space-4);
-    }
-    .collection-filter__actions {
-      margin-top: 0;
-    }
+  /* Anchors the popover .collection-filters__panel to its own toggle,
+     at every width — the dropdown-pill look applies consistently rather
+     than switching to a permanently-expanded inline bar at desktop. */
+  .collection-filters {
+    position: relative;
+  }
+  .collection-toolbar {
+    align-items: center;
+  }
+  .collection-toolbar__start {
+    align-items: center;
   }
 
   .collection-grid {
@@ -387,26 +460,39 @@
 
 {% javascript %}
   document.addEventListener('DOMContentLoaded', function () {
-    var sortForm = document.getElementById('CollectionSortForm');
-    if (sortForm) {
-      var sortSelect = document.getElementById('SortBy');
-      var sortSubmit = sortForm.querySelector('[data-sort-submit]');
-      if (sortSubmit) sortSubmit.hidden = true;
-      sortSelect.addEventListener('change', function () {
-        sortForm.requestSubmit();
-      });
-    }
-
     var filterForm = document.getElementById('CollectionFiltersForm');
     if (filterForm) {
-      var filterSubmit = filterForm.querySelector('[data-filter-submit]');
-      if (filterSubmit) filterSubmit.hidden = true;
       var checkboxes = filterForm.querySelectorAll('input[type="checkbox"]');
       checkboxes.forEach(function (checkbox) {
         checkbox.addEventListener('change', function () {
           filterForm.requestSubmit();
         });
       });
+    }
+
+    /*
+     * DOCU: Wires the rating filter radios to show/hide already-rendered
+     * product cards client-side — rating isn't a native Shopify filter,
+     * so this is a plain-JS complement to the real (server-driven)
+     * filters above, using a class so it composes with the search
+     * filter's own hiding instead of overwriting it.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
+    const ratingInputs = document.querySelectorAll('[data-rating-filter-input]');
+    if (ratingInputs.length > 0) {
+      const applyRatingFilter = () => {
+        const checked = document.querySelector('[data-rating-filter-input]:checked');
+        const threshold = checked ? parseFloat(checked.value) || 0 : 0;
+
+        document.querySelectorAll('.product-card[data-product-rating]').forEach((card) => {
+          const rating = parseFloat(card.getAttribute('data-product-rating')) || 0;
+          card.classList.toggle('rating-hide', threshold > 0 && rating < threshold);
+        });
+      };
+      ratingInputs.forEach((input) => input.addEventListener('change', applyRatingFilter));
     }
   });
 {% endjavascript %}

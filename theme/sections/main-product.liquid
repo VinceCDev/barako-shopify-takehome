@@ -25,6 +25,11 @@
   if product_collection == blank
     assign product_collection = product.collections.first
   endif
+
+  assign local_fallback_url = ''
+  if product.type == 'Coffee' or product.type == 'Gear'
+    assign local_fallback_url = 'product-' | append: product.handle | append: '.jpg' | asset_url
+  endif
 %}
 
 <div class="product-main wrap">
@@ -66,7 +71,7 @@
           {% endfor %}
         </div>
       {% endif %}
-    {% elsif product.type == 'Coffee' %}
+    {% elsif local_fallback_url != blank %}
       {% comment %}
         No merchant image picked yet: fall back to a bundled photo
         matching this product's handle (assets/product-<handle>.jpg).
@@ -74,7 +79,7 @@
       <div class="product-gallery__main">
         <div class="product-gallery__slide">
           <img
-            src="{{ 'product-' | append: product.handle | append: '.jpg' | asset_url }}"
+            src="{{ local_fallback_url }}"
             alt=""
             width="800"
             height="1000"

@@ -85,7 +85,7 @@
   }
   .search-bar__input {
     flex: 1 1 auto;
-    min-height: 2.75rem;
+    height: 2.75rem;
     border-right: none;
   }
   .search-bar__submit {
@@ -93,7 +93,7 @@
     align-items: center;
     justify-content: center;
     min-width: 2.75rem;
-    min-height: 2.75rem;
+    height: 2.75rem;
     background: none;
     border: 1px solid var(--color-border);
     border-left: none;
@@ -108,15 +108,27 @@
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
   }
-  /* .product-card sets its own `display`, which otherwise beats the [hidden]
-     UA rule at equal specificity since author styles always win over the
-     UA stylesheet regardless of source order. */
-  .product-card[hidden] {
+  /* Search and the collection page's separate rating filter each mark
+     cards independently (search-hide / rating-hide) rather than fighting
+     over a single [hidden] attribute — a card shows only when neither
+     filter wants it gone. */
+  .product-card.search-hide,
+  .product-card.rating-hide {
     display: none;
   }
 {% endstylesheet %}
 
 {% javascript %}
+  /*
+   * DOCU: Filters the collection grid's product cards by title, marking
+   * non-matching cards with a class rather than [hidden] so the effect
+   * combines correctly with the rating filter's own class.
+   * @param {HTMLInputElement} input - The collection search text input.
+   *
+   * Last Updated: 2026-09-28
+   * Author: Vince Allen
+   * Last Updated By: Vince Allen
+   */
   function filterCollectionCards(input) {
     const form = input.closest('form');
     const query = input.value.trim().toLowerCase();
@@ -124,11 +136,11 @@
     const emptyEl = form.parentElement.querySelector('[data-collection-search-empty]');
     let visibleCount = 0;
 
-    cards.forEach(function (card) {
+    cards.forEach((card) => {
       const title = (card.getAttribute('data-product-title') || '').toLowerCase();
       const matches = query === '' || title.indexOf(query) !== -1;
-      card.hidden = !matches;
-      if (matches) visibleCount += 1;
+      card.classList.toggle('search-hide', !matches);
+      if (matches && !card.classList.contains('rating-hide')) visibleCount += 1;
     });
 
     if (emptyEl) {

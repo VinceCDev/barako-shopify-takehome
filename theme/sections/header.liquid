@@ -1,3 +1,14 @@
+{% liquid
+  # New customer accounts hand off to Shopify's own hosted domain for
+  # login, and by default land back on Shopify's hosted order history
+  # afterward rather than this storefront. Appending return_to asks it to
+  # send the shopper back here instead — supported for the hosted flow,
+  # though Shopify controls whether/how it's honored, not the theme.
+  assign account_login_href = routes.account_login_url | append: '?return_to=/pages/profile'
+  if routes.account_login_url contains '?'
+    assign account_login_href = routes.account_login_url | append: '&return_to=/pages/profile'
+  endif
+%}
 <header class="header{% if template == 'index' %} header--transparent{% endif %}">
   <div class="header__row wrap">
     <p class="header__title">
@@ -20,16 +31,67 @@
       </summary>
     </details>
 
+    <div class="header__nav-backdrop" data-nav-backdrop></div>
+
     <nav class="header__menu" aria-label="{{ 'general.menu' | t }}">
-      {% for link in section.settings.menu.links %}
-        <a
-          href="{{ link.url }}"
-          class="header__menu-link"
-          {% if link.active %}aria-current="page"{% endif %}
-        >
-          {{ link.title }}
-        </a>
+      <button type="button" class="header__menu-close" data-nav-close aria-label="{{ 'general.close' | t }}">
+        {% render 'icon', name: 'close' %}
+      </button>
+
+      <p class="header__menu-label">{{ 'general.menu' | t }}</p>
+      {% comment %}
+        The menu's own order (set in Admin > Navigation) isn't something
+        theme code can reorder there — but we CAN reorder it here at
+        render time: Contact always renders last, regardless of where the
+        merchant has it positioned in the linklist.
+      {% endcomment %}
+      {% liquid
+        assign menu_links = section.settings.menu.links
+        assign contact_link = null
+        for link in menu_links
+          if link.title == 'Contact'
+            assign contact_link = link
+          endif
+        endfor
+      %}
+      {% for link in menu_links %}
+        {% unless link.title == 'Contact' %}
+          <a
+            href="{{ link.url }}"
+            class="header__menu-link"
+            {% if link.active %}aria-current="page"{% endif %}
+          >
+            {{ link.title }}
+          </a>
+        {% endunless %}
       {% endfor %}
+      {% if contact_link %}
+        <a
+          href="{{ contact_link.url }}"
+          class="header__menu-link"
+          {% if contact_link.active %}aria-current="page"{% endif %}
+        >
+          {{ contact_link.title }}
+        </a>
+      {% endif %}
+
+      {% if shop.customer_accounts_enabled and customer == blank %}
+        {% comment %}
+          Login/Register move in here on mobile, where they'd otherwise
+          crowd the top row alongside the logo and menu toggle — this
+          copy is hidden at desktop widths, where .header__auth-links
+          (in .header__icons) already shows them inline.
+        {% endcomment %}
+        <div class="header__menu-auth" data-guest-only>
+          <p class="header__menu-label">{{ 'customers.account.section_label' | t }}</p>
+          <a href="{{ account_login_href }}" class="header__menu-link" data-demo-login-trigger>
+            {{ 'customers.login.title' | t }}
+          </a>
+          <a href="{{ routes.account_register_url }}" class="header__menu-link header__menu-link--primary">
+            {{ 'customers.register.title' | t }}
+          </a>
+        </div>
+      {% endif %}
     </nav>
 
     <div class="header__icons">
@@ -57,18 +119,47 @@
             </div>
           </details>
         {% else %}
-          <div class="header__auth-links">
-            <a href="{{ routes.account_login_url }}" class="header__auth-link">
+          {% comment %}
+            Real Shopify login hands off to their hosted domain and,
+            depending on the store's settings, may not come back — too
+            disruptive for previewing the theme. "Login" here instead
+            simulates a logged-in header state entirely client-side (a
+            sessionStorage flag, same pattern as the favorites/reviews
+            demo features), so it never leaves this page. The real login
+            link still exists as a fallback for no-JS. Note this only
+            affects the header UI: /pages/profile itself still needs a
+            real Shopify session to show actual customer data.
+          {% endcomment %}
+          <div class="header__auth-links" data-guest-only>
+            <a href="{{ account_login_href }}" class="header__auth-link" data-demo-login-trigger>
               {{ 'customers.login.title' | t }}
             </a>
             <a href="{{ routes.account_register_url }}" class="header__auth-link header__auth-link--primary">
               {{ 'customers.register.title' | t }}
             </a>
           </div>
+          <details class="header__account-menu" data-demo-account-menu hidden>
+            <summary class="header__icon-link" aria-label="{{ 'customers.account.title' | t }}">
+              {% render 'icon', name: 'account' %}
+            </summary>
+            <div class="header__account-panel">
+              <a href="/pages/profile" class="header__account-link">
+                {{ 'customers.account.view_profile' | t }}
+              </a>
+              <button type="button" class="header__account-link" data-demo-logout>
+                {{ 'customers.account.logout' | t }}
+              </button>
+            </div>
+          </details>
         {% endif %}
       {% endif %}
 
-      <a href="{{ routes.cart_url }}" class="header__icon-link header__cart-link">
+      <a
+        href="{{ routes.cart_url }}"
+        class="header__icon-link header__cart-link"
+        data-cart-icon
+        {% unless customer or shop.customer_accounts_enabled == false %}hidden{% endunless %}
+      >
         {% render 'icon', name: 'cart' %}
         <span class="visually-hidden">
           {{ 'cart.title' | t }}, {{ 'cart.item_count' | t: count: cart.item_count }}
@@ -89,11 +180,31 @@
 
 {% stylesheet %}
   .header {
+    /* Escape the .shopify-section grid's own content-column inset (see
+       critical.css's ".shopify-section > *" rule) — otherwise .header__row's
+       own .wrap padding stacks on top of that, double-insetting everything
+       inside the header relative to every other (single-inset) section. */
+    grid-column: 1 / -1;
     position: relative;
     z-index: 10;
     background-color: var(--color-background);
     border-bottom: 1px solid var(--color-border);
     color: var(--color-text);
+  }
+
+  /* Author `display` rules elsewhere in this file (.header__icon-link,
+     .header__auth-links, .header__menu-auth, .header__account-menu) all
+     beat the UA's [hidden]{display:none} regardless of specificity,
+     since author origin always wins over UA origin — so every element
+     this file toggles via the `hidden` attribute (server-rendered or via
+     JS) needs an explicit, higher-priority override here. */
+  .header__icon-link[hidden],
+  .header__auth-links[hidden],
+  .header__account-menu[hidden] {
+    display: none;
+  }
+  .header__menu-auth[hidden] {
+    display: none !important;
   }
 
   /* Homepage only: purely positioning, NO background/scrim of its own.
@@ -137,10 +248,16 @@
     text-decoration: none;
   }
 
+  /* Optical alignment: a circle's leftmost point is a single curved edge,
+     not a flat stroke like the text below it — aligned to the same exact
+     bounding-box edge, it reads as sitting slightly further right than
+     flat-edged content. A small negative margin compensates so it lines
+     up visually, not just mathematically. */
   .header__logo {
     width: 2.25rem;
     height: 2.25rem;
     max-width: none;
+    margin-left: -0.1875rem;
     border-radius: 50%;
     object-fit: cover;
   }
@@ -173,31 +290,78 @@
     width: 1.375rem;
   }
 
-  /* The nav is a sibling of <details>, hidden by default and shown via the
-     [open] attribute rather than nested inside the disclosure, so it never
-     fights the browser's own "hide closed details content" rule. */
+  /* The nav is a sibling of <details>, driven purely by its [open]
+     attribute rather than nested inside the disclosure, so it never
+     fights the browser's own "hide closed details content" rule, and
+     works without JS. On mobile it's a sidebar: fixed to the left edge,
+     full height, slid off-screen until opened — animated via transform,
+     not display, so the slide-in transition actually runs. */
   .header__menu {
-    display: none;
+    display: flex;
     flex-direction: column;
-    gap: var(--space-1);
-    position: absolute;
-    top: 100%;
+    gap: var(--space-2);
+    position: fixed;
+    top: 0;
+    bottom: 0;
     left: 0;
-    right: 0;
-    padding: var(--space-4) var(--page-margin) var(--space-6);
+    z-index: 50;
+    width: min(20rem, 85vw);
+    padding: var(--space-6) var(--space-5);
     background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
     color: var(--color-text);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform var(--transition-fast), visibility var(--transition-fast);
   }
   .header__nav-toggle[open] ~ .header__menu {
-    display: flex;
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .header__menu-close {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) 0 0;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .header__menu-close svg {
+    width: 1.25rem;
+  }
+
+  /* Dims the page behind the open sidebar; a plain sibling div (rather
+     than a real backdrop pseudo-element on <details>, which can't be
+     full-viewport) toggled the same [open]-driven way, with a tiny bit
+     of JS below to let tapping it close the sidebar too. */
+  .header__nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  }
+  .header__nav-toggle[open] ~ .header__nav-backdrop {
+    opacity: 1;
+    visibility: visible;
   }
 
   .header__menu-link {
     display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
     color: inherit;
     text-decoration: none;
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-md);
     transition: background-color var(--transition-fast), color var(--transition-fast);
@@ -206,6 +370,40 @@
   .header__menu-link[aria-current='page'] {
     background-color: var(--color-primary);
     color: var(--color-on-primary);
+  }
+
+  /* Login/Register inside the mobile dropdown — hidden until the toggle
+     is open, and hidden entirely at desktop widths (see media query
+     below), where .header__auth-links shows them inline instead. */
+  .header__menu-auth {
+    display: none;
+  }
+  .header__nav-toggle[open] ~ .header__menu .header__menu-auth {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+  }
+  .header__menu-label {
+    padding-inline: var(--space-4);
+    margin-bottom: var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    color: var(--color-text-muted);
+  }
+  .header__menu-auth .header__menu-label {
+    margin-bottom: var(--space-2);
+  }
+  .header__menu-link--primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+  .header__menu-link--primary:hover {
+    background-color: var(--color-primary-hover);
   }
 
   .header__icons {
@@ -268,15 +466,21 @@
     text-decoration: none;
     font-size: var(--font-size-sm);
   }
-  .header__auth-link:hover {
+  .header__auth-link:hover,
+  .header__auth-link:focus-visible,
+  .header__auth-link:active {
     background-color: var(--color-surface);
+    color: var(--color-text);
   }
   .header__auth-link--primary {
     background-color: var(--color-primary);
     color: var(--color-on-primary);
   }
-  .header__auth-link--primary:hover {
+  .header__auth-link--primary:hover,
+  .header__auth-link--primary:focus-visible,
+  .header__auth-link--primary:active {
     background-color: var(--color-primary-hover);
+    color: var(--color-on-primary);
   }
 
   /* 44x44 minimum tap target: the icon glyph stays small and visually
@@ -332,10 +536,16 @@
       flex-direction: row;
       align-items: center;
       gap: var(--space-2);
+      width: auto;
       padding: 0;
       background-color: transparent;
+      border-right: none;
       border-bottom: none;
       color: inherit;
+      overflow: visible;
+      transform: none;
+      visibility: visible;
+      transition: none;
     }
     .header__menu-link {
       align-items: center;
@@ -348,27 +558,124 @@
       order: 3;
       margin-inline-end: calc(var(--space-3) * -1);
     }
+    /* Belt-and-suspenders: if the mobile toggle was left [open] before
+       the viewport crossed into desktop width, don't let this block
+       reappear inline in the horizontal desktop nav. */
+    .header__menu-auth,
+    .header__menu-close,
+    .header__menu-label,
+    .header__nav-backdrop {
+      display: none !important;
+    }
+  }
+  @media (max-width: 749px) {
+    .header__auth-links {
+      display: none;
+    }
   }
 {% endstylesheet %}
 
 {% javascript %}
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', () => {
     const logoutLink = document.querySelector('[data-logout-trigger]');
-    if (!logoutLink || !window.BarakoConfirm) return;
+    if (logoutLink && window.BarakoConfirm) {
+      logoutLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.BarakoConfirm
+          .show({
+            title: logoutLink.getAttribute('data-confirm-title'),
+            message: logoutLink.getAttribute('data-confirm-message'),
+            confirmLabel: logoutLink.getAttribute('data-confirm-action'),
+            cancelLabel: logoutLink.getAttribute('data-cancel-label'),
+          })
+          .then((confirmed) => {
+            if (confirmed) window.location.href = logoutLink.href;
+          });
+      });
+    }
 
-    logoutLink.addEventListener('click', function (event) {
-      event.preventDefault();
-      window.BarakoConfirm
-        .show({
-          title: logoutLink.getAttribute('data-confirm-title'),
-          message: logoutLink.getAttribute('data-confirm-message'),
-          confirmLabel: logoutLink.getAttribute('data-confirm-action'),
-          cancelLabel: logoutLink.getAttribute('data-cancel-label'),
-        })
-        .then(function (confirmed) {
-          if (confirmed) window.location.href = logoutLink.href;
+    /*
+     * DOCU: Wires the mobile nav sidebar's backdrop and close button so
+     * either one closes the <details>-driven sidebar. The sidebar still
+     * works without JS (tap the hamburger again to close) — this is
+     * purely a convenience enhancement.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
+    const navToggle = document.querySelector('.header__nav-toggle');
+    const navBackdrop = document.querySelector('[data-nav-backdrop]');
+    const navClose = document.querySelector('[data-nav-close]');
+    if (navToggle) {
+      const closeNav = () => {
+        navToggle.removeAttribute('open');
+      };
+
+      if (navBackdrop) navBackdrop.addEventListener('click', closeNav);
+      if (navClose) navClose.addEventListener('click', closeNav);
+    }
+
+    /*
+     * DOCU: Simulates a logged-in header (Profile + Cart icons in place
+     * of Login/Register) purely client-side, so previewing the theme
+     * doesn't get interrupted by Shopify's real hosted login handoff.
+     * Only touches elements that exist when no real customer session is
+     * present — a genuine Shopify login always takes precedence.
+     *
+     * Last Updated: 2026-09-28
+     * Author: Vince Allen
+     * Last Updated By: Vince Allen
+     */
+    const DEMO_LOGIN_KEY = 'barako:demo-logged-in';
+    const guestLinksEls = document.querySelectorAll('[data-guest-only]');
+    const demoAccountMenu = document.querySelector('[data-demo-account-menu]');
+    const cartIcon = document.querySelector('[data-cart-icon]');
+    const demoLoginTriggers = document.querySelectorAll('[data-demo-login-trigger]');
+    const demoLogoutButton = document.querySelector('[data-demo-logout]');
+
+    if (guestLinksEls.length > 0 || demoAccountMenu) {
+      const isDemoLoggedIn = () => {
+        try {
+          return sessionStorage.getItem(DEMO_LOGIN_KEY) === 'true';
+        } catch (error) {
+          return false;
+        }
+      };
+
+      const setDemoLoggedIn = (value) => {
+        try {
+          sessionStorage.setItem(DEMO_LOGIN_KEY, value ? 'true' : 'false');
+        } catch (error) {
+          // Storage unavailable — the toggle still works for this page view.
+        }
+      };
+
+      const applyDemoState = () => {
+        const loggedIn = isDemoLoggedIn();
+        guestLinksEls.forEach((el) => {
+          el.hidden = loggedIn;
         });
-    });
+        if (demoAccountMenu) demoAccountMenu.hidden = !loggedIn;
+        if (cartIcon) cartIcon.hidden = !loggedIn;
+      };
+
+      applyDemoState();
+
+      demoLoginTriggers.forEach((trigger) => {
+        trigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          setDemoLoggedIn(true);
+          applyDemoState();
+        });
+      });
+      if (demoLogoutButton) {
+        demoLogoutButton.addEventListener('click', () => {
+          setDemoLoggedIn(false);
+          applyDemoState();
+        });
+      }
+    }
   });
 {% endjavascript %}
 

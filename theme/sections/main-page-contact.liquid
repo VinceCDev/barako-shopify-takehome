@@ -6,7 +6,6 @@
 {% endcomment %}
 
 <div class="contact-page wrap">
-  {% render 'breadcrumbs', current_title: page.title %}
   <h1 class="contact-page__title">{{ page.title }}</h1>
   {% if page.content != blank %}
     <div class="contact-page__intro">{{ page.content }}</div>
@@ -27,7 +26,20 @@
                 <p class="contact-info-card__label">{{ block.settings.label }}</p>
               {% endif %}
               {% if block.settings.value != blank %}
-                <div class="contact-info-card__value">{{ block.settings.value }}</div>
+                {% liquid
+                  assign clean_value = block.settings.value | strip_html | strip
+                %}
+                {% if block.settings.icon == 'phone' %}
+                  <a class="contact-info-card__value contact-info-card__value--link" href="tel:{{ clean_value | remove: ' ' }}">
+                    {{ clean_value }}
+                  </a>
+                {% elsif block.settings.icon == 'mail' %}
+                  <a class="contact-info-card__value contact-info-card__value--link" href="mailto:{{ clean_value }}">
+                    {{ clean_value }}
+                  </a>
+                {% else %}
+                  <div class="contact-info-card__value">{{ block.settings.value }}</div>
+                {% endif %}
               {% endif %}
             </div>
           </div>
@@ -74,9 +86,6 @@
 {% stylesheet %}
   .contact-page {
     padding-block: var(--section-padding);
-  }
-  .contact-page .breadcrumbs {
-    margin-bottom: var(--space-5);
   }
   .contact-page__title {
     font-size: var(--font-size-2xl);
@@ -142,6 +151,16 @@
   .contact-info-card__value {
     margin-top: var(--space-1);
     font-size: var(--font-size-sm);
+  }
+  .contact-info-card__value--link {
+    display: block;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  .contact-info-card__value--link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
   }
   .contact-info-card__value p + p {
     margin-top: var(--space-1);

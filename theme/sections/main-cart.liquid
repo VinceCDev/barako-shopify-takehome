@@ -88,7 +88,7 @@
               <div class="cart-item__media">
                 {% if item.image %}
                   {{ item.image | image_url: width: 300 | image_tag: class: 'cart-item__image', loading: 'lazy', alt: item.image.alt | default: item.product.title }}
-                {% elsif item.product.type == 'Coffee' %}
+                {% elsif item.product.type == 'Coffee' or item.product.type == 'Gear' %}
                   {% comment %}
                     Same bundled-photo fallback as the product card/page —
                     the cart's own item.image is blank for these since
@@ -897,21 +897,50 @@
        checkout — this storefront's demo product data doesn't correspond
        to real, purchasable variants, so a real checkout redirect just
        fails with "Cannot find variant." Instead: ask for a payment
-       method, then clear the cart and land back here empty, like an
-       order had actually gone through. */
+       method, then remove only what's being "bought" and land back here,
+       like an order had actually gone through. If specific items are
+       checked, only those lines are removed (the rest of the cart is
+       left alone) — otherwise, with nothing checked, the whole cart
+       checks out as one order, same as before. */
     form.addEventListener('submit', function (event) {
       var submitter = event.submitter;
       if (submitter && submitter.name === 'checkout') {
         event.preventDefault();
 
+        var checkedLines = Array.prototype.filter
+          .call(itemCheckboxes, function (checkbox) {
+            return checkbox.checked;
+          })
+          .map(function (checkbox) {
+            return parseInt(checkbox.getAttribute('data-line'), 10);
+          });
+
         var dialogPromise = window.BarakoPaymentDialog ? window.BarakoPaymentDialog.show() : Promise.resolve('');
         dialogPromise.then(function (method) {
           if (method === null) return;
 
-          fetch('/cart/clear.js', {
-            method: 'POST',
-            headers: { Accept: 'application/json' },
-          }).then(function () {
+          var removeItems;
+          if (checkedLines.length > 0) {
+            // Highest line number first — removing a lower line renumbers
+            // every line after it, so this order keeps the remaining
+            // line numbers stable for the lines still to be removed.
+            removeItems = checkedLines
+              .sort(function (a, b) {
+                return b - a;
+              })
+              .reduce(function (chain, line) {
+                return chain.then(function () {
+                  return changeItem(line, 0);
+                });
+              }, Promise.resolve());
+          } else {
+            removeItems = fetch('/cart/clear.js', {
+              method: 'POST',
+              headers: { Accept: 'application/json' },
+            });
+          }
+
+          removeItems.then(function () {
             if (window.BarakoToast) {
               window.BarakoToast.showAfterReload(form.getAttribute('data-order-placed-toast'), {
                 title: form.getAttribute('data-order-placed-toast-title'),
